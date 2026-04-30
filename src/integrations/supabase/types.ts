@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_limits: {
+        Row: {
+          created_at: string
+          id: string
+          limit_exhausted_at: string | null
+          updated_at: string
+          used_count: number
+          user_id: string
+          window_started_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          limit_exhausted_at?: string | null
+          updated_at?: string
+          used_count?: number
+          user_id: string
+          window_started_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          limit_exhausted_at?: string | null
+          updated_at?: string
+          used_count?: number
+          user_id?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -35,37 +65,247 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      chat_messages: {
         Row: {
+          ai_response: string
           created_at: string
-          display_name: string | null
           id: string
-          pro_expires_at: string | null
-          pro_payment_provider: string | null
-          pro_payment_reference: string | null
-          subscription_plan: string
+          mode: string
+          user_id: string
+          user_message: string
+        }
+        Insert: {
+          ai_response?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          user_id: string
+          user_message: string
+        }
+        Update: {
+          ai_response?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          user_id?: string
+          user_message?: string
+        }
+        Relationships: []
+      }
+      daily_checkins: {
+        Row: {
+          ai_feedback: string | null
+          completed_at: string
+          created_at: string
+          goal_id: string | null
+          id: string
+          meals_done: boolean
+          mood_score: number | null
+          sleep_done: boolean
+          updated_at: string
+          user_id: string
+          water_done: boolean
+          workout_done: boolean
+        }
+        Insert: {
+          ai_feedback?: string | null
+          completed_at?: string
+          created_at?: string
+          goal_id?: string | null
+          id?: string
+          meals_done?: boolean
+          mood_score?: number | null
+          sleep_done?: boolean
+          updated_at?: string
+          user_id: string
+          water_done?: boolean
+          workout_done?: boolean
+        }
+        Update: {
+          ai_feedback?: string | null
+          completed_at?: string
+          created_at?: string
+          goal_id?: string | null
+          id?: string
+          meals_done?: boolean
+          mood_score?: number | null
+          sleep_done?: boolean
+          updated_at?: string
+          user_id?: string
+          water_done?: boolean
+          workout_done?: boolean
+        }
+        Relationships: []
+      }
+      lifestyle_reminders: {
+        Row: {
+          channel: string
+          created_at: string
+          goal_id: string | null
+          id: string
+          is_enabled: boolean
+          message_template: string | null
+          reminder_type: string
+          scheduled_time: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          channel?: string
           created_at?: string
-          display_name?: string | null
+          goal_id?: string | null
           id?: string
-          pro_expires_at?: string | null
-          pro_payment_provider?: string | null
-          pro_payment_reference?: string | null
-          subscription_plan?: string
+          is_enabled?: boolean
+          message_template?: string | null
+          reminder_type: string
+          scheduled_time?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          channel?: string
+          created_at?: string
+          goal_id?: string | null
+          id?: string
+          is_enabled?: boolean
+          message_template?: string | null
+          reminder_type?: string
+          scheduled_time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      medicine_searches: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      phone_verifications: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          verified: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          verified?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          allergies: string[] | null
+          blood_pressure: Json | null
+          created_at: string
+          display_name: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          pro_expires_at: string | null
+          pro_payment_provider: string | null
+          pro_payment_reference: string | null
+          subscription_plan: string
+          terms_accepted_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          blood_pressure?: Json | null
           created_at?: string
           display_name?: string | null
+          full_name?: string | null
           id?: string
+          phone?: string | null
           pro_expires_at?: string | null
           pro_payment_provider?: string | null
           pro_payment_reference?: string | null
           subscription_plan?: string
+          terms_accepted_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: string[] | null
+          blood_pressure?: Json | null
+          created_at?: string
+          display_name?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          pro_expires_at?: string | null
+          pro_payment_provider?: string | null
+          pro_payment_reference?: string | null
+          subscription_plan?: string
+          terms_accepted_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -99,6 +339,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reviews: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          rating: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_goals: {
+        Row: {
+          activity_level: string
+          age: number
+          created_at: string
+          gender: string
+          goal_type: string
+          height_cm: number
+          id: string
+          notification_channels: Json | null
+          plan_data: Json | null
+          start_weight_kg: number
+          target_calories: number | null
+          target_carbs_g: number | null
+          target_fat_g: number | null
+          target_protein_g: number | null
+          telegram_chat_id: string | null
+          telegram_link_code: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_level: string
+          age: number
+          created_at?: string
+          gender: string
+          goal_type: string
+          height_cm: number
+          id?: string
+          notification_channels?: Json | null
+          plan_data?: Json | null
+          start_weight_kg: number
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_protein_g?: number | null
+          telegram_chat_id?: string | null
+          telegram_link_code?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_level?: string
+          age?: number
+          created_at?: string
+          gender?: string
+          goal_type?: string
+          height_cm?: number
+          id?: string
+          notification_channels?: Json | null
+          plan_data?: Json | null
+          start_weight_kg?: number
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_protein_g?: number | null
+          telegram_chat_id?: string | null
+          telegram_link_code?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -167,6 +497,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weight_history: {
+        Row: {
+          created_at: string
+          goal_id: string | null
+          id: string
+          recorded_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          goal_id?: string | null
+          id?: string
+          recorded_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string | null
+          id?: string
+          recorded_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
       }
     }
     Views: {

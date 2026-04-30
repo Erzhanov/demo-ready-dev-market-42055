@@ -129,7 +129,7 @@ const LifestylePage = () => {
       if (profileData?.allergies?.length) setAllergies(profileData.allergies.join(", "));
       if (profileData?.blood_pressure) setBloodPressure(profileData.blood_pressure);
 
-      const goalData = goals as {
+      const goalData = goals as unknown as {
         id: string;
         gender: Gender;
         age: number;
@@ -195,8 +195,8 @@ const LifestylePage = () => {
     };
 
     const goalRequest = goalId
-      ? supabase.from("user_goals").update(goalPayload).eq("id", goalId).select("id").single()
-      : supabase.from("user_goals").insert(goalPayload).select("id").single();
+      ? supabase.from("user_goals").update(goalPayload as never).eq("id", goalId).select("id").single()
+      : supabase.from("user_goals").insert(goalPayload as never).select("id").single();
 
     const [{ error: profileError }, { data, error: goalError }] = await Promise.all([profileUpdate, goalRequest]);
 
