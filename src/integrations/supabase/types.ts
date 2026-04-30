@@ -367,6 +367,42 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_webhook_events: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          status: string
+          stripe_event_id: string | null
+          subscription_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          status?: string
+          stripe_event_id?: string | null
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          status?: string
+          stripe_event_id?: string | null
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_goals: {
         Row: {
           activity_level: string
