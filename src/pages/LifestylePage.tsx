@@ -129,7 +129,7 @@ const LifestylePage = () => {
       if (profileData?.allergies?.length) setAllergies(profileData.allergies.join(", "));
       if (profileData?.blood_pressure) setBloodPressure(profileData.blood_pressure);
 
-      const goalData = goals as {
+      const goalData = goals as unknown as {
         id: string;
         gender: Gender;
         age: number;
