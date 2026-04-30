@@ -10,545 +10,138 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
-      ai_usage_limits: {
-        Row: {
-          limit_exhausted_at: string | null
-          updated_at: string
-          used_count: number
-          user_id: string
-          window_started_at: string
-        }
-        Insert: {
-          limit_exhausted_at?: string | null
-          updated_at?: string
-          used_count?: number
-          user_id: string
-          window_started_at?: string
-        }
-        Update: {
-          limit_exhausted_at?: string | null
-          updated_at?: string
-          used_count?: number
-          user_id?: string
-          window_started_at?: string
-        }
-        Relationships: []
-      }
-      auth_audit_log: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          error_message: string | null
-          event_type: string
-          id: string
-          is_relay_email: boolean | null
-          provider: string | null
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          error_message?: string | null
-          event_type: string
-          id?: string
-          is_relay_email?: boolean | null
-          provider?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          error_message?: string | null
-          event_type?: string
-          id?: string
-          is_relay_email?: boolean | null
-          provider?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      chat_messages: {
-        Row: {
-          ai_response: string | null
-          created_at: string
-          id: string
-          mode: string
-          user_id: string
-          user_message: string
-        }
-        Insert: {
-          ai_response?: string | null
-          created_at?: string
-          id?: string
-          mode?: string
-          user_id: string
-          user_message: string
-        }
-        Update: {
-          ai_response?: string | null
-          created_at?: string
-          id?: string
-          mode?: string
-          user_id?: string
-          user_message?: string
-        }
-        Relationships: []
-      }
-      medicine_searches: {
+      categories: {
         Row: {
           created_at: string
           id: string
-          query: string
-          user_id: string
+          name: string
+          slug: string
         }
         Insert: {
           created_at?: string
           id?: string
-          query: string
-          user_id: string
+          name: string
+          slug: string
         }
         Update: {
           created_at?: string
           id?: string
-          query?: string
-          user_id?: string
+          name?: string
+          slug?: string
         }
         Relationships: []
       }
-      oauth_identities: {
+      purchases: {
         Row: {
-          created_at: string | null
           id: string
-          provider: string
-          provider_email: string | null
-          provider_user_id: string
-          raw_data: Json | null
-          updated_at: string | null
+          purchased_at: string
           user_id: string
+          website_id: string
         }
         Insert: {
-          created_at?: string | null
           id?: string
-          provider: string
-          provider_email?: string | null
-          provider_user_id: string
-          raw_data?: Json | null
-          updated_at?: string | null
+          purchased_at?: string
           user_id: string
+          website_id: string
         }
         Update: {
-          created_at?: string | null
           id?: string
-          provider?: string
-          provider_email?: string | null
-          provider_user_id?: string
-          raw_data?: Json | null
-          updated_at?: string | null
+          purchased_at?: string
           user_id?: string
+          website_id?: string
         }
-        Relationships: []
-      }
-      phone_verifications: {
-        Row: {
-          code: string
-          created_at: string
-          expires_at: string
-          id: string
-          phone: string
-          verified: boolean
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          phone: string
-          verified?: boolean
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          phone?: string
-          verified?: boolean
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          allergies: string[]
-          auth_providers: string[] | null
-          avatar_url: string | null
-          blood_pressure: string
-          created_at: string
-          full_name: string | null
-          id: string
-          is_relay_email: boolean | null
-          phone: string | null
-          pro_expires_at: string | null
-          pro_payment_provider: string | null
-          pro_payment_reference: string | null
-          relay_email: string | null
-          subscription_plan: string
-          terms_accepted_at: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          allergies?: string[]
-          auth_providers?: string[] | null
-          avatar_url?: string | null
-          blood_pressure?: string
-          created_at?: string
-          full_name?: string | null
-          id?: string
-          is_relay_email?: boolean | null
-          phone?: string | null
-          pro_expires_at?: string | null
-          pro_payment_provider?: string | null
-          pro_payment_reference?: string | null
-          relay_email?: string | null
-          subscription_plan?: string
-          terms_accepted_at?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          allergies?: string[]
-          auth_providers?: string[] | null
-          avatar_url?: string | null
-          blood_pressure?: string
-          created_at?: string
-          full_name?: string | null
-          id?: string
-          is_relay_email?: boolean | null
-          phone?: string | null
-          pro_expires_at?: string | null
-          pro_payment_provider?: string | null
-          pro_payment_reference?: string | null
-          relay_email?: string | null
-          subscription_plan?: string
-          terms_accepted_at?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      daily_checkins: {
-        Row: {
-          ai_feedback: string | null
-          completed_at: string
-          created_at: string
-          goal_id: string | null
-          id: string
-          meals_done: boolean
-          mood_score: number | null
-          sleep_done: boolean
-          updated_at: string
-          user_id: string
-          water_done: boolean
-          workout_done: boolean
-        }
-        Insert: {
-          ai_feedback?: string | null
-          completed_at?: string
-          created_at?: string
-          goal_id?: string | null
-          id?: string
-          meals_done?: boolean
-          mood_score?: number | null
-          sleep_done?: boolean
-          updated_at?: string
-          user_id: string
-          water_done?: boolean
-          workout_done?: boolean
-        }
-        Update: {
-          ai_feedback?: string | null
-          completed_at?: string
-          created_at?: string
-          goal_id?: string | null
-          id?: string
-          meals_done?: boolean
-          mood_score?: number | null
-          sleep_done?: boolean
-          updated_at?: string
-          user_id?: string
-          water_done?: boolean
-          workout_done?: boolean
-        }
-        Relationships: []
-      }
-      lifestyle_reminders: {
-        Row: {
-          channel: string
-          created_at: string
-          goal_id: string | null
-          id: string
-          is_enabled: boolean
-          message_template: string
-          reminder_type: string
-          scheduled_time: string
-          timezone: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          channel: string
-          created_at?: string
-          goal_id?: string | null
-          id?: string
-          is_enabled?: boolean
-          message_template: string
-          reminder_type: string
-          scheduled_time: string
-          timezone?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          channel?: string
-          created_at?: string
-          goal_id?: string | null
-          id?: string
-          is_enabled?: boolean
-          message_template?: string
-          reminder_type?: string
-          scheduled_time?: string
-          timezone?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      reviews: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          rating: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          rating?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          rating?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "purchases_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
+          created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
       }
-      user_goals: {
+      websites: {
         Row: {
-          activity_level: string
-          age: number
+          category_id: string | null
           created_at: string
-          gender: string
-          goal_type: string
-          height_cm: number
+          demo_url: string
+          description: string
+          full_url: string
           id: string
-          notification_channels: Json
-          plan_data: Json
-          start_weight_kg: number
-          status: string
-          target_calories: number
-          target_carbs_g: number
-          target_fat_g: number
-          target_protein_g: number
-          telegram_chat_id: string | null
-          telegram_link_code: string
+          image_url: string | null
+          price: number
+          title: string
           updated_at: string
-          user_id: string
         }
         Insert: {
-          activity_level: string
-          age: number
+          category_id?: string | null
           created_at?: string
-          gender: string
-          goal_type: string
-          height_cm: number
+          demo_url: string
+          description: string
+          full_url: string
           id?: string
-          notification_channels?: Json
-          plan_data?: Json
-          start_weight_kg: number
-          status?: string
-          target_calories: number
-          target_carbs_g: number
-          target_fat_g: number
-          target_protein_g: number
-          telegram_chat_id?: string | null
-          telegram_link_code?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          activity_level?: string
-          age?: number
-          created_at?: string
-          gender?: string
-          goal_type?: string
-          height_cm?: number
-          id?: string
-          notification_channels?: Json
-          plan_data?: Json
-          start_weight_kg?: number
-          status?: string
-          target_calories?: number
-          target_carbs_g?: number
-          target_fat_g?: number
-          target_protein_g?: number
-          telegram_chat_id?: string | null
-          telegram_link_code?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      weight_history: {
-        Row: {
-          created_at: string
-          goal_id: string | null
-          id: string
-          recorded_at: string
-          user_id: string
-          weight_kg: number
-        }
-        Insert: {
-          created_at?: string
-          goal_id?: string | null
-          id?: string
-          recorded_at?: string
-          user_id: string
-          weight_kg: number
-        }
-        Update: {
-          created_at?: string
-          goal_id?: string | null
-          id?: string
-          recorded_at?: string
-          user_id?: string
-          weight_kg?: number
-        }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          body: string
-          channel: string
-          created_at: string
-          id: string
-          metadata: Json
-          reminder_id: string | null
-          scheduled_for: string
-          sent_at: string | null
-          status: string
+          image_url?: string | null
+          price: number
           title: string
-          user_id: string
-        }
-        Insert: {
-          body: string
-          channel: string
-          created_at?: string
-          id?: string
-          metadata?: Json
-          reminder_id?: string | null
-          scheduled_for: string
-          sent_at?: string | null
-          status?: string
-          title: string
-          user_id: string
+          updated_at?: string
         }
         Update: {
-          body?: string
-          channel?: string
+          category_id?: string | null
           created_at?: string
+          demo_url?: string
+          description?: string
+          full_url?: string
           id?: string
-          metadata?: Json
-          reminder_id?: string | null
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: string
+          image_url?: string | null
+          price?: number
           title?: string
-          user_id?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "websites_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_by_oauth: {
-        Args: { _provider: string; _provider_user_id: string }
-        Returns: string
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
-        Returns: boolean
-      }
-      link_oauth_provider: {
-        Args: {
-          _provider: string
-          _provider_email: string
-          _provider_user_id: string
-          _raw_data: Json
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      log_auth_event: {
-        Args: {
-          _email: string
-          _error_message?: string
-          _event_type: string
-          _is_relay_email?: boolean
-          _provider: string
-          _status?: string
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      update_relay_email: {
-        Args: { _email: string; _is_relay: boolean; _user_id: string }
         Returns: boolean
       }
     }
