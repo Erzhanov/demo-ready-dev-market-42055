@@ -18,6 +18,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ProPage from "./pages/ProPage";
 import LifestylePage from "./pages/LifestylePage";
 import AdminPage from "./pages/AdminPage";
+import StripeDebugPage from "./pages/StripeDebugPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/pro" element={<ProtectedRoute><ProPage /></ProtectedRoute>} />
               <Route path="/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
               <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="/admin/stripe-debug" element={<AdminRoute><StripeDebugPage /></AdminRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
