@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Segoe UI', 'Tahoma', 'Arial', 'Noto Sans', 'system-ui', 'sans-serif'],
+        display: ['Segoe UI', 'Tahoma', 'Arial', 'Noto Sans', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -46,6 +50,11 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        medical: {
+          blue: "hsl(var(--medical-blue))",
+          green: "hsl(var(--medical-green))",
+          light: "hsl(var(--medical-light))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
