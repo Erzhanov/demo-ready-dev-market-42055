@@ -195,8 +195,8 @@ const LifestylePage = () => {
     };
 
     const goalRequest = goalId
-      ? supabase.from("user_goals").update(goalPayload).eq("id", goalId).select("id").single()
-      : supabase.from("user_goals").insert(goalPayload).select("id").single();
+      ? supabase.from("user_goals").update(goalPayload as never).eq("id", goalId).select("id").single()
+      : supabase.from("user_goals").insert(goalPayload as never).select("id").single();
 
     const [{ error: profileError }, { data, error: goalError }] = await Promise.all([profileUpdate, goalRequest]);
 
