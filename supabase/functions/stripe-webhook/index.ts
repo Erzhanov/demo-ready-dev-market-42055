@@ -114,27 +114,58 @@ const deactivatePro = async (userId: string, reference: string) => {
   if (error) throw error;
 };
 
+const logEvent = async (entry: {
+  stripeEventId?: string | null;
+  eventType: string;
+  userId?: string | null;
+  subscriptionId?: string | null;
+  status: string;
+  errorMessage?: string | null;
+  payload?: unknown;
+}) => {
+  try {
+    const adminClient = getAdminClient();
+    await adminClient.from("stripe_webhook_events").insert({
+      stripe_event_id: entry.stripeEventId ?? null,
+      event_type: entry.eventType,
+      user_id: entry.userId ?? null,
+      subscription_id: entry.subscriptionId ?? null,
+      status: entry.status,
+      error_message: entry.errorMessage ?? null,
+      payload: entry.payload ?? null,
+    });
+  } catch (err) {
+    console.error("Failed to log webhook event:", err);
+  }
+};
+
 serve(async (req) => {
+  let event: { id?: string; type?: string; data?: { object?: Record<string, unknown> } } | null = null;
   try {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     const signature = req.headers.get("stripe-signature");
     const rawBody = await req.text();
 
     if (!webhookSecret || !signature) {
+      await logEvent({ eventType: "unknown", status: "error", errorMessage: "Webhook secret or signature missing" });
       return new Response("Webhook secret or signature missing", { status: 400 });
     }
 
     const verified = await verifyStripeSignature(rawBody, signature, webhookSecret);
     if (!verified) {
+      await logEvent({ eventType: "unknown", status: "error", errorMessage: "Invalid signature" });
       return new Response("Invalid signature", { status: 400 });
     }
 
-    const event = JSON.parse(rawBody);
+    event = JSON.parse(rawBody);
+    const eventType = event?.type ?? "unknown";
+    const eventId = event?.id ?? null;
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const userId = session.metadata?.user_id || session.client_reference_id;
-      const subscriptionId = typeof session.subscription === "string" ? session.subscription : null;
+    if (event?.type === "checkout.session.completed") {
+      const session = event.data?.object as Record<string, unknown> | undefined;
+      const metadata = (session?.metadata as Record<string, string> | undefined) ?? {};
+      const userId = metadata.user_id || (session?.client_reference_id as string | undefined) || null;
+      const subscriptionId = typeof session?.subscription === "string" ? session.subscription : null;
 
       if (userId && subscriptionId) {
         const subscription = await fetchStripeSubscription(subscriptionId);
@@ -144,31 +175,43 @@ serve(async (req) => {
           reference: subscriptionId,
           currentPeriodEnd: subscription.current_period_end,
         });
+        await logEvent({ stripeEventId: eventId, eventType, userId, subscriptionId, status: "pro_activated", payload: event });
+      } else {
+        await logEvent({ stripeEventId: eventId, eventType, userId, subscriptionId, status: "skipped_missing_ids", payload: event });
       }
-    }
-
-    if (event.type === "customer.subscription.updated") {
-      const subscription = event.data.object;
-      const userId = subscription.metadata?.user_id;
+    } else if (event?.type === "customer.subscription.updated") {
+      const subscription = event.data?.object as Record<string, unknown> | undefined;
+      const metadata = (subscription?.metadata as Record<string, string> | undefined) ?? {};
+      const userId = metadata.user_id || null;
+      const status = subscription?.status as string | undefined;
+      const subscriptionId = (subscription?.id as string | undefined) ?? null;
       const activeStatuses = ["active", "trialing"];
 
-      if (userId && activeStatuses.includes(subscription.status)) {
+      if (userId && status && activeStatuses.includes(status)) {
         await activatePro({
           userId,
           provider: "stripe",
-          reference: subscription.id,
-          currentPeriodEnd: subscription.current_period_end,
+          reference: subscriptionId ?? "",
+          currentPeriodEnd: subscription?.current_period_end as number | null | undefined,
         });
+        await logEvent({ stripeEventId: eventId, eventType, userId, subscriptionId, status: "pro_renewed", payload: event });
+      } else {
+        await logEvent({ stripeEventId: eventId, eventType, userId, subscriptionId, status: `skipped_status_${status ?? "none"}`, payload: event });
       }
-    }
+    } else if (event?.type === "customer.subscription.deleted") {
+      const subscription = event.data?.object as Record<string, unknown> | undefined;
+      const metadata = (subscription?.metadata as Record<string, string> | undefined) ?? {};
+      const userId = metadata.user_id || null;
+      const subscriptionId = (subscription?.id as string | undefined) ?? null;
 
-    if (event.type === "customer.subscription.deleted") {
-      const subscription = event.data.object;
-      const userId = subscription.metadata?.user_id;
-
-      if (userId) {
-        await deactivatePro(userId, subscription.id);
+      if (userId && subscriptionId) {
+        await deactivatePro(userId, subscriptionId);
+        await logEvent({ stripeEventId: eventId, eventType, userId, subscriptionId, status: "pro_deactivated", payload: event });
+      } else {
+        await logEvent({ stripeEventId: eventId, eventType, userId, subscriptionId, status: "skipped_missing_ids", payload: event });
       }
+    } else {
+      await logEvent({ stripeEventId: eventId, eventType, status: "ignored", payload: event });
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -176,6 +219,13 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("stripe-webhook error:", error);
+    await logEvent({
+      stripeEventId: event?.id ?? null,
+      eventType: event?.type ?? "unknown",
+      status: "error",
+      errorMessage: error instanceof Error ? error.message : String(error),
+      payload: event,
+    });
     return new Response(error instanceof Error ? error.message : "Webhook error", { status: 500 });
   }
 });
