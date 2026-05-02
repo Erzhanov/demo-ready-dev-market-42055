@@ -75,39 +75,29 @@ const ChatPage = () => {
 
     let isMounted = true;
 
-    const loadPlan = async () => {
-      const [{ data: profile }, { data: usage }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("subscription_plan, pro_expires_at")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("ai_usage_limits")
-          .select("window_started_at, used_count, limit_exhausted_at")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-      ]);
+    const loadUsage = async () => {
+      const { data: usage } = await supabase
+        .from("ai_usage_limits")
+        .select("window_started_at, used_count, limit_exhausted_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       if (!isMounted) return;
 
-      const proExpiresAt = profile?.pro_expires_at ? new Date(profile.pro_expires_at).getTime() : null;
-      const activePro = profile?.subscription_plan === "pro" && (!proExpiresAt || proExpiresAt > Date.now());
       const windowStartedAt = usage?.window_started_at ? new Date(usage.window_started_at).getTime() : null;
       const resetAt = windowStartedAt ? new Date(windowStartedAt + 12 * 60 * 60 * 1000) : null;
       const windowExpired = resetAt ? resetAt.getTime() <= Date.now() : false;
 
-      setIsPro(activePro);
-      setRemainingQuestions(activePro || windowExpired ? (activePro ? null : 5) : Math.max(5 - (usage?.used_count || 0), 0));
-      setLimitResetAt(activePro || windowExpired ? null : resetAt?.toISOString() ?? null);
+      setRemainingQuestions(isPro || windowExpired ? (isPro ? null : 5) : Math.max(5 - (usage?.used_count || 0), 0));
+      setLimitResetAt(isPro || windowExpired ? null : resetAt?.toISOString() ?? null);
     };
 
-    void loadPlan();
+    void loadUsage();
 
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, isPro]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
