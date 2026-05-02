@@ -10,14 +10,14 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const navItems = [
-  { path: "/chat", label: "Көмек" , icon: MessageSquare },
+const getNavItems = (isPro: boolean) => [
+  { path: "/chat", label: "Көмек", icon: MessageSquare },
   { path: "/history", label: "Тарих", icon: History },
   { path: "/medicine", label: "Дәрі", icon: Search },
   { path: "/lifestyle", label: "Lifestyle", icon: HeartPulse },
   { path: "/reviews", label: "Пікір", icon: MessageCircle },
   { path: "/profile", label: "Профиль", icon: User },
-  { path: "/pro", label: "Pro", icon: Crown },
+  ...(!isPro ? [{ path: "/pro", label: "Pro", icon: Crown }] : []),
 ];
 
 const Layout = ({ children }: LayoutProps) => {
