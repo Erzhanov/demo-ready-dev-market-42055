@@ -16,6 +16,10 @@ import {
   Check,
   Crown,
   CreditCard,
+  Infinity,
+  Zap,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -241,6 +245,47 @@ const ChatPage = () => {
                 <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                   Мысалы: "басым ауырып тұр", "дәрі туралы айт", "күйзелісім көбейіп кетті".
                 </p>
+
+                {isPro && (
+                  <div className="mt-6 grid w-full max-w-lg gap-3 sm:grid-cols-2">
+                    <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 text-left dark:border-amber-500/20 dark:bg-amber-500/5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15">
+                        <Infinity className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Лимитсіз сұрақ</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-amber-700/80 dark:text-amber-300/70">Қанша қойсаңыз да — шектеу жоқ</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 text-left dark:border-amber-500/20 dark:bg-amber-500/5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15">
+                        <Zap className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Күшті AI режимі</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-amber-700/80 dark:text-amber-300/70">Тереңірек, толық жауаптар</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 text-left dark:border-amber-500/20 dark:bg-amber-500/5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15">
+                        <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Қауіпсіз кеңес</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-amber-700/80 dark:text-amber-300/70">Қауіп белгілерін ескертеді</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 text-left dark:border-amber-500/20 dark:bg-amber-500/5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-500/15">
+                        <Sparkles className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Pro артықшылық</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-amber-700/80 dark:text-amber-300/70">Барлық режимде басымдылық</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               messages.map((msg) => (
@@ -340,9 +385,17 @@ const ChatPage = () => {
               </Button>
             </form>
             <p className="mt-2 text-xs text-muted-foreground">
-              {isPro ? "Pro режимі толық жауап береді және лимитсіз. " : `Тегін режим: 12 сағатқа 5 сұрақ, қысқа жауаптар. Қалды: ${remainingQuestions ?? 5}. `}
-              {!isPro && remainingQuestions === 0 && resetTimeLabel ? `Жаңа лимит: ${resetTimeLabel}. ` : ""}
-              AI нақты диагноз қоймайды. Ауыр жағдайда дәрігерге жүгініңіз.
+              {isPro ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Crown className="inline h-3 w-3 text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium text-amber-700 dark:text-amber-300">Pro режимі</span>
+                  <span>— лимитсіз сұрақ, толық жауап, басым өңдеу.</span>
+                </span>
+              ) : (
+                <>{`Тегін режим: 12 сағатқа 5 сұрақ, қысқа жауаптар. Қалды: ${remainingQuestions ?? 5}. `}
+                {remainingQuestions === 0 && resetTimeLabel ? `Жаңа лимит: ${resetTimeLabel}. ` : ""}</>
+              )}
+              {" "}AI нақты диагноз қоймайды. Ауыр жағдайда дәрігерге жүгініңіз.
             </p>
           </div>
         </section>
