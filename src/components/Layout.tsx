@@ -5,19 +5,20 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
+import { useProStatus } from "@/hooks/use-pro-status";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const navItems = [
-  { path: "/chat", label: "Көмек" , icon: MessageSquare },
+const getNavItems = (isPro: boolean) => [
+  { path: "/chat", label: "Көмек", icon: MessageSquare },
   { path: "/history", label: "Тарих", icon: History },
   { path: "/medicine", label: "Дәрі", icon: Search },
   { path: "/lifestyle", label: "Lifestyle", icon: HeartPulse },
   { path: "/reviews", label: "Пікір", icon: MessageCircle },
   { path: "/profile", label: "Профиль", icon: User },
-  { path: "/pro", label: "Pro", icon: Crown },
+  ...(!isPro ? [{ path: "/pro", label: "Pro", icon: Crown }] : []),
 ];
 
 const Layout = ({ children }: LayoutProps) => {
@@ -26,6 +27,8 @@ const Layout = ({ children }: LayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { isPro } = useProStatus();
+  const navItems = getNavItems(isPro);
 
   const handleLogout = async () => {
     await signOut();
@@ -41,8 +44,18 @@ const Layout = ({ children }: LayoutProps) => {
               <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold">AIZHAN</p>
-              <p className="hidden text-[11px] text-muted-foreground sm:block">Қарапайым медициналық көмекші</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold">AIZHAN</p>
+                {isPro && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                    <Crown className="h-3 w-3" />
+                    PRO
+                  </span>
+                )}
+              </div>
+              <p className="hidden text-[11px] text-muted-foreground sm:block">
+                {isPro ? "Pro медициналық көмекші — лимитсіз" : "Қарапайым медициналық көмекші"}
+              </p>
             </div>
           </NavLink>
 
