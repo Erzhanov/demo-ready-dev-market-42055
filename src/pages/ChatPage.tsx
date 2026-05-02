@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProStatus } from "@/hooks/use-pro-status";
 
 interface Message {
   id: string;
