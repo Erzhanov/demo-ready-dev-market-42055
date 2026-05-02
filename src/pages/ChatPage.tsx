@@ -16,6 +16,10 @@ import {
   Check,
   Crown,
   CreditCard,
+  Infinity,
+  Zap,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
