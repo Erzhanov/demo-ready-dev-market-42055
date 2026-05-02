@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
+import { useProStatus } from "@/hooks/use-pro-status";
 
 interface LayoutProps {
   children: React.ReactNode;
