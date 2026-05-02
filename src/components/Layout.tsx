@@ -26,6 +26,8 @@ const Layout = ({ children }: LayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { isPro } = useProStatus();
+  const navItems = getNavItems(isPro);
 
   const handleLogout = async () => {
     await signOut();
