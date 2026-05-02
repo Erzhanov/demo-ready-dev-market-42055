@@ -10,6 +10,7 @@ import { useProStatus } from "@/hooks/use-pro-status";
 
 const ProfilePage = () => {
   const { user } = useAuth();
+  const { isPro, proExpiresAt } = useProStatus();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
