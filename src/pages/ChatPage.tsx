@@ -385,9 +385,17 @@ const ChatPage = () => {
               </Button>
             </form>
             <p className="mt-2 text-xs text-muted-foreground">
-              {isPro ? "Pro режимі толық жауап береді және лимитсіз. " : `Тегін режим: 12 сағатқа 5 сұрақ, қысқа жауаптар. Қалды: ${remainingQuestions ?? 5}. `}
-              {!isPro && remainingQuestions === 0 && resetTimeLabel ? `Жаңа лимит: ${resetTimeLabel}. ` : ""}
-              AI нақты диагноз қоймайды. Ауыр жағдайда дәрігерге жүгініңіз.
+              {isPro ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Crown className="inline h-3 w-3 text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium text-amber-700 dark:text-amber-300">Pro режимі</span>
+                  <span>— лимитсіз сұрақ, толық жауап, басым өңдеу.</span>
+                </span>
+              ) : (
+                <>{`Тегін режим: 12 сағатқа 5 сұрақ, қысқа жауаптар. Қалды: ${remainingQuestions ?? 5}. `}
+                {remainingQuestions === 0 && resetTimeLabel ? `Жаңа лимит: ${resetTimeLabel}. ` : ""}</>
+              )}
+              {" "}AI нақты диагноз қоймайды. Ауыр жағдайда дәрігерге жүгініңіз.
             </p>
           </div>
         </section>
