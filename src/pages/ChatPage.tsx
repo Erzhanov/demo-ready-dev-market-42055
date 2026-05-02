@@ -61,7 +61,7 @@ const ChatPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ChatMode>("medical");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isPro, setIsPro] = useState(false);
+  const { isPro } = useProStatus();
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(null);
   const [limitResetAt, setLimitResetAt] = useState<string | null>(null);
   const [proDialogOpen, setProDialogOpen] = useState(false);
