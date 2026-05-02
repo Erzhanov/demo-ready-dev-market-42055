@@ -118,8 +118,21 @@ const ProfilePage = () => {
               <User className="h-10 w-10 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-display text-2xl font-semibold tracking-tight">{name || "Пайдаланушы"}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display text-2xl font-semibold tracking-tight">{name || "Пайдаланушы"}</h2>
+                {isPro && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                    <Crown className="h-3.5 w-3.5" />
+                    PRO
+                  </span>
+                )}
+              </div>
               <p className="mt-1 text-sm text-muted-foreground">{email || "Email көрсетілмеген"}</p>
+              {isPro && proExpiresAt && (
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                  Pro мерзімі: {new Date(proExpiresAt).toLocaleDateString("kk-KZ", { year: "numeric", month: "long", day: "numeric" })} дейін
+                </p>
+              )}
             </div>
           </div>
 
