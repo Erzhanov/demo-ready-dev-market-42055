@@ -44,8 +44,18 @@ const Layout = ({ children }: LayoutProps) => {
               <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold">AIZHAN</p>
-              <p className="hidden text-[11px] text-muted-foreground sm:block">Қарапайым медициналық көмекші</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold">AIZHAN</p>
+                {isPro && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                    <Crown className="h-3 w-3" />
+                    PRO
+                  </span>
+                )}
+              </div>
+              <p className="hidden text-[11px] text-muted-foreground sm:block">
+                {isPro ? "Pro медициналық көмекші — лимитсіз" : "Қарапайым медициналық көмекші"}
+              </p>
             </div>
           </NavLink>
 
