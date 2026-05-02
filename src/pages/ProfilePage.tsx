@@ -2,10 +2,11 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Mail, Phone, Calendar, Save, Shield, Sparkles } from "lucide-react";
+import { User, Mail, Phone, Calendar, Save, Shield, Sparkles, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useProStatus } from "@/hooks/use-pro-status";
 
 const ProfilePage = () => {
   const { user } = useAuth();
