@@ -40,21 +40,20 @@ export const useProStatus = (): ProStatus => {
 
     void load();
 
-    // Listen for realtime profile changes
-    const channel = supabase
-      .channel("pro-status")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          const row = payload.new as { subscription_plan?: string; pro_expires_at?: string };
-          const expiresAt = row.pro_expires_at ? new Date(row.pro_expires_at).getTime() : null;
-          const active = row.subscription_plan === "pro" && (!expiresAt || expiresAt > Date.now());
-          setIsPro(active);
-          setProExpiresAt(row.pro_expires_at ?? null);
-        }
-      )
-      .subscribe();
+    // Listen for realtime profile changes — define listener BEFORE subscribe
+    const channel = supabase.channel("pro-status");
+    channel.on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+      (payload) => {
+        const row = payload.new as { subscription_plan?: string; pro_expires_at?: string };
+        const expiresAt = row.pro_expires_at ? new Date(row.pro_expires_at).getTime() : null;
+        const active = row.subscription_plan === "pro" && (!expiresAt || expiresAt > Date.now());
+        setIsPro(active);
+        setProExpiresAt(row.pro_expires_at ?? null);
+      }
+    );
+    channel.subscribe();
 
     return () => {
       isMounted = false;
