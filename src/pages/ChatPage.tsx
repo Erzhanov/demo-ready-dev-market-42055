@@ -155,7 +155,7 @@ const ChatPage = () => {
         onUsage: (usage) => {
           setRemainingQuestions(usage.remaining);
           setLimitResetAt(usage.resetAt ?? null);
-          if (!isPro && usage.remaining === 0) {
+          if (!isPro && !proLoading && usage.remaining === 0) {
             setProDialogOpen(true);
             setLimitDialogShown(true);
           }
