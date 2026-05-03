@@ -65,7 +65,7 @@ const ChatPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ChatMode>("medical");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const { isPro } = useProStatus();
+  const { isPro, loading: proLoading } = useProStatus();
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(null);
   const [limitResetAt, setLimitResetAt] = useState<string | null>(null);
   const [proDialogOpen, setProDialogOpen] = useState(false);
@@ -108,11 +108,11 @@ const ChatPage = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (!isPro && remainingQuestions === 0 && !limitDialogShown) {
+    if (!isPro && !proLoading && remainingQuestions === 0 && !limitDialogShown) {
       setProDialogOpen(true);
       setLimitDialogShown(true);
     }
-  }, [isPro, limitDialogShown, remainingQuestions]);
+  }, [isPro, proLoading, limitDialogShown, remainingQuestions]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -155,7 +155,7 @@ const ChatPage = () => {
         onUsage: (usage) => {
           setRemainingQuestions(usage.remaining);
           setLimitResetAt(usage.resetAt ?? null);
-          if (!isPro && usage.remaining === 0) {
+          if (!isPro && !proLoading && usage.remaining === 0) {
             setProDialogOpen(true);
             setLimitDialogShown(true);
           }
@@ -165,7 +165,7 @@ const ChatPage = () => {
         },
         onError: (err) => {
           toast({ title: "AI қатесі", description: err, variant: "destructive" });
-          if (err.includes("лимит")) {
+          if (!isPro && !proLoading && err.includes("лимит")) {
             setRemainingQuestions(0);
             setProDialogOpen(true);
             setLimitDialogShown(true);
