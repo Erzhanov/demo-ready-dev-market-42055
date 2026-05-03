@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+let proStatusChannelCounter = 0;
+
 interface ProStatus {
   isPro: boolean;
   proExpiresAt: string | null;
@@ -40,21 +42,22 @@ export const useProStatus = (): ProStatus => {
 
     void load();
 
-    // Use unique channel name to avoid conflicts with React Strict Mode double-mount
-    const channelName = `pro-status-${user.id}-${Date.now()}`;
-    const channel = supabase.channel(channelName);
-    channel.on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
-      (payload) => {
-        const row = payload.new as { subscription_plan?: string; pro_expires_at?: string };
-        const expiresAt = row.pro_expires_at ? new Date(row.pro_expires_at).getTime() : null;
-        const active = row.subscription_plan === "pro" && (!expiresAt || expiresAt > Date.now());
-        setIsPro(active);
-        setProExpiresAt(row.pro_expires_at ?? null);
-      }
-    );
-    channel.subscribe();
+    // Supabase reuses channels with the same topic; make the topic collision-proof.
+    const channelName = `pro-status-${user.id}-${crypto.randomUUID()}-${proStatusChannelCounter++}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const row = payload.new as { subscription_plan?: string; pro_expires_at?: string };
+          const expiresAt = row.pro_expires_at ? new Date(row.pro_expires_at).getTime() : null;
+          const active = row.subscription_plan === "pro" && (!expiresAt || expiresAt > Date.now());
+          setIsPro(active);
+          setProExpiresAt(row.pro_expires_at ?? null);
+        }
+      )
+      .subscribe();
 
     return () => {
       isMounted = false;
