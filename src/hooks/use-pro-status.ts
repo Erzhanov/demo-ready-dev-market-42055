@@ -40,8 +40,9 @@ export const useProStatus = (): ProStatus => {
 
     void load();
 
-    // Listen for realtime profile changes — define listener BEFORE subscribe
-    const channel = supabase.channel("pro-status");
+    // Use unique channel name to avoid conflicts with React Strict Mode double-mount
+    const channelName = `pro-status-${user.id}-${Date.now()}`;
+    const channel = supabase.channel(channelName);
     channel.on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
