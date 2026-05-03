@@ -34,7 +34,7 @@ export const useProStatus = (): ProStatus => {
       if (!isMounted) return;
 
       const expiresAt = data?.pro_expires_at ? new Date(data.pro_expires_at).getTime() : null;
-      const active = data?.subscription_plan === "pro" && (!expiresAt || expiresAt > Date.now());
+      const active = data?.subscription_plan?.toLowerCase() === "pro" && (!expiresAt || expiresAt > Date.now());
       setIsPro(active);
       setProExpiresAt(data?.pro_expires_at ?? null);
       setLoading(false);
@@ -52,7 +52,7 @@ export const useProStatus = (): ProStatus => {
         (payload) => {
           const row = payload.new as { subscription_plan?: string; pro_expires_at?: string };
           const expiresAt = row.pro_expires_at ? new Date(row.pro_expires_at).getTime() : null;
-          const active = row.subscription_plan === "pro" && (!expiresAt || expiresAt > Date.now());
+          const active = row.subscription_plan?.toLowerCase() === "pro" && (!expiresAt || expiresAt > Date.now());
           setIsPro(active);
           setProExpiresAt(row.pro_expires_at ?? null);
         }
