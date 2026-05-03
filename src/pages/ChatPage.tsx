@@ -108,11 +108,11 @@ const ChatPage = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (!isPro && remainingQuestions === 0 && !limitDialogShown) {
+    if (!isPro && !proLoading && remainingQuestions === 0 && !limitDialogShown) {
       setProDialogOpen(true);
       setLimitDialogShown(true);
     }
-  }, [isPro, limitDialogShown, remainingQuestions]);
+  }, [isPro, proLoading, limitDialogShown, remainingQuestions]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
