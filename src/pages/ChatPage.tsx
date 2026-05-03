@@ -165,7 +165,7 @@ const ChatPage = () => {
         },
         onError: (err) => {
           toast({ title: "AI қатесі", description: err, variant: "destructive" });
-          if (err.includes("лимит")) {
+          if (!isPro && !proLoading && err.includes("лимит")) {
             setRemainingQuestions(0);
             setProDialogOpen(true);
             setLimitDialogShown(true);
