@@ -1,31 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProStatus } from "@/hooks/use-pro-status";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Activity,
   AlertTriangle,
   Apple,
+  ArrowRight,
   Bell,
   CheckCircle2,
+  ChevronRight,
   Copy,
+  Crown,
   Droplets,
   Dumbbell,
   ExternalLink,
+  Flame,
   HeartPulse,
+  Lock,
   Moon,
+  Plus,
   Save,
   Scale,
   Send,
   ShieldAlert,
   Sparkles,
+  Target,
+  TrendingDown,
   TrendingUp,
+  Trophy,
+  Utensils,
+  Zap,
 } from "lucide-react";
 import {
   ActivityLevel,
@@ -40,21 +53,39 @@ import {
 } from "@/lib/lifestyle";
 
 type ReminderChannel = "in_app" | "browser" | "telegram";
+type ActiveSection = "dashboard" | "profile" | "plan" | "tracking" | "notifications";
 
 const today = new Date().toISOString().slice(0, 10);
 
 const reminderTypes = [
-  { key: "meal", label: "Тамақ", time: "08:00", icon: Apple },
-  { key: "water", label: "Су", time: "10:30", icon: Droplets },
-  { key: "workout", label: "Жаттығу", time: "18:30", icon: Dumbbell },
-  { key: "sleep", label: "Ұйқы", time: "22:30", icon: Moon },
+  { key: "meal", label: "Тамақ", time: "08:00", icon: Apple, emoji: "🍽️" },
+  { key: "water", label: "Су", time: "10:30", icon: Droplets, emoji: "💧" },
+  { key: "workout", label: "Жаттығу", time: "18:30", icon: Dumbbell, emoji: "💪" },
+  { key: "sleep", label: "Ұйқы", time: "22:30", icon: Moon, emoji: "🌙" },
 ] as const;
+
+const dayEmojis: Record<string, string> = {
+  "Дүйсенбі": "🔥", "Сейсенбі": "⚡", "Сәрсенбі": "🧘", "Бейсенбі": "💪",
+  "Жұма": "🏃", "Сенбі": "🎯", "Жексенбі": "😴",
+};
+
+const intensityColors: Record<string, string> = {
+  light: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  moderate: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  active: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+};
 
 const LifestylePage = () => {
   const { user } = useAuth();
+  const { isPro, loading: proLoading } = useProStatus();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState<ActiveSection>("dashboard");
   const [goalId, setGoalId] = useState<string | null>(null);
+
+  // Profile fields
   const [gender, setGender] = useState<Gender>("female");
   const [age, setAge] = useState("25");
   const [heightCm, setHeightCm] = useState("165");
@@ -63,316 +94,324 @@ const LifestylePage = () => {
   const [goal, setGoal] = useState<LifestyleGoal>("maintain");
   const [allergies, setAllergies] = useState("");
   const [bloodPressure, setBloodPressure] = useState<BloodPressure>("unknown");
+
+  // Tracking
   const [weightEntry, setWeightEntry] = useState("");
   const [checkIn, setCheckIn] = useState({ workout: false, water: false, meals: false, sleep: false });
-  const [reminderChannels, setReminderChannels] = useState<Record<ReminderChannel, boolean>>({
-    in_app: true,
-    browser: false,
-    telegram: false,
-  });
+
+  // Notifications
+  const [reminderChannels, setReminderChannels] = useState<Record<ReminderChannel, boolean>>({ in_app: true, browser: false, telegram: false });
   const [telegramChatId, setTelegramChatId] = useState("");
   const [telegramLinkCode, setTelegramLinkCode] = useState("");
-  const [reminders, setReminders] = useState<Record<string, boolean>>({
-    meal: true,
-    water: true,
-    workout: true,
-    sleep: true,
-  });
-  const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({
-    meal: "08:00",
-    water: "10:30",
-    workout: "18:30",
-    sleep: "22:30",
-  });
+  const [reminders, setReminders] = useState<Record<string, boolean>>({ meal: true, water: true, workout: true, sleep: true });
+  const [reminderTimes, setReminderTimes] = useState<Record<string, string>>({ meal: "08:00", water: "10:30", workout: "18:30", sleep: "22:30" });
+
+  // Data
   const [recentWeights, setRecentWeights] = useState<Array<{ id: string; weight_kg: number; recorded_at: string }>>([]);
   const [recentCheckIns, setRecentCheckIns] = useState<Array<{ id: string; completed_at: string; workout_done: boolean; water_done: boolean; meals_done: boolean; sleep_done: boolean }>>([]);
-  const [inAppNotifications, setInAppNotifications] = useState<Array<{ id: string; title: string; body: string; status: string; scheduled_for: string }>>([]);
+
   const botUrl = import.meta.env.VITE_TELEGRAM_BOT_URL || "https://t.me/AIZHAN_lifestyle_bot";
 
-  const numericProfile = useMemo(
-    () => ({
-      gender,
-      age: Number(age) || 25,
-      heightCm: Number(heightCm) || 165,
-      weightKg: Number(weightKg) || 60,
-      activityLevel,
-      goal,
-      allergies: parseAllergies(allergies),
-      bloodPressure,
-    }),
-    [activityLevel, age, allergies, bloodPressure, gender, goal, heightCm, weightKg],
-  );
+  const numericProfile = useMemo(() => ({
+    gender, age: Number(age) || 25, heightCm: Number(heightCm) || 165, weightKg: Number(weightKg) || 60,
+    activityLevel, goal, allergies: parseAllergies(allergies), bloodPressure,
+  }), [activityLevel, age, allergies, bloodPressure, gender, goal, heightCm, weightKg]);
+
   const plan = useMemo(() => calculateLifestylePlan(numericProfile), [numericProfile]);
-  const currentDayWorkout = plan.workouts[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  const currentDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const currentDayWorkout = plan.workouts[currentDayIndex];
   const completedCount = Object.values(checkIn).filter(Boolean).length;
-  const streak = recentCheckIns.filter((item) => item.workout_done || item.water_done || item.meals_done || item.sleep_done).length;
+  const streak = recentCheckIns.filter((i) => i.workout_done || i.water_done || i.meals_done || i.sleep_done).length;
   const lastWeight = recentWeights[0]?.weight_kg;
   const firstWeight = recentWeights[recentWeights.length - 1]?.weight_kg;
   const weightDelta = typeof lastWeight === "number" && typeof firstWeight === "number" ? Number((lastWeight - firstWeight).toFixed(1)) : 0;
 
   useEffect(() => {
     if (!user) return;
-
     let isMounted = true;
-    const loadLifestyle = async () => {
-      const [{ data: profile }, { data: goals }, { data: weights }, { data: checks }, { data: notifications }] = await Promise.all([
+    const load = async () => {
+      const [{ data: profile }, { data: goals }, { data: weights }, { data: checks }] = await Promise.all([
         supabase.from("profiles").select("allergies, blood_pressure").eq("user_id", user.id).single(),
         supabase.from("user_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("weight_history").select("id, weight_kg, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: false }).limit(8),
+        supabase.from("weight_history").select("id, weight_kg, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: false }).limit(14),
         supabase.from("daily_checkins").select("*").eq("user_id", user.id).order("completed_at", { ascending: false }).limit(7),
-        supabase.from("notifications").select("id, title, body, status, scheduled_for").eq("user_id", user.id).order("scheduled_for", { ascending: false }).limit(5),
       ]);
-
       if (!isMounted) return;
 
-      const profileData = profile as { allergies?: string[] | null; blood_pressure?: BloodPressure | null } | null;
-      if (profileData?.allergies?.length) setAllergies(profileData.allergies.join(", "));
-      if (profileData?.blood_pressure) setBloodPressure(profileData.blood_pressure);
+      const p = profile as { allergies?: string[] | null; blood_pressure?: BloodPressure | null } | null;
+      if (p?.allergies?.length) setAllergies(p.allergies.join(", "));
+      if (p?.blood_pressure) setBloodPressure(p.blood_pressure);
 
-      const goalData = goals as unknown as {
-        id: string;
-        gender: Gender;
-        age: number;
-        height_cm: number;
-        start_weight_kg: number;
-        activity_level: ActivityLevel;
-        goal_type: LifestyleGoal;
+      const g = goals as unknown as {
+        id: string; gender: Gender; age: number; height_cm: number; start_weight_kg: number;
+        activity_level: ActivityLevel; goal_type: LifestyleGoal;
         notification_channels?: Record<ReminderChannel, boolean> | null;
-        telegram_chat_id?: string | null;
-        telegram_link_code?: string | null;
+        telegram_chat_id?: string | null; telegram_link_code?: string | null;
       } | null;
 
-      if (goalData) {
-        setGoalId(goalData.id);
-        setGender(goalData.gender);
-        setAge(String(goalData.age));
-        setHeightCm(String(goalData.height_cm));
-        setWeightKg(String(goalData.start_weight_kg));
-        setWeightEntry(String(goalData.start_weight_kg));
-        setActivityLevel(goalData.activity_level);
-        setGoal(goalData.goal_type);
-        setReminderChannels((current) => ({ ...current, ...(goalData.notification_channels || {}) }));
-        setTelegramChatId(goalData.telegram_chat_id || "");
-        setTelegramLinkCode(goalData.telegram_link_code || "");
+      if (g) {
+        setGoalId(g.id); setGender(g.gender); setAge(String(g.age));
+        setHeightCm(String(g.height_cm)); setWeightKg(String(g.start_weight_kg));
+        setWeightEntry(String(g.start_weight_kg)); setActivityLevel(g.activity_level);
+        setGoal(g.goal_type);
+        setReminderChannels((c) => ({ ...c, ...(g.notification_channels || {}) }));
+        setTelegramChatId(g.telegram_chat_id || ""); setTelegramLinkCode(g.telegram_link_code || "");
       }
 
-      setRecentWeights((weights || []) as Array<{ id: string; weight_kg: number; recorded_at: string }>);
-      setRecentCheckIns((checks || []) as Array<{ id: string; completed_at: string; workout_done: boolean; water_done: boolean; meals_done: boolean; sleep_done: boolean }>);
-      setInAppNotifications((notifications || []) as Array<{ id: string; title: string; body: string; status: string; scheduled_for: string }>);
+      setRecentWeights((weights || []) as typeof recentWeights);
+      setRecentCheckIns((checks || []) as typeof recentCheckIns);
     };
-
-    void loadLifestyle();
-
-    return () => {
-      isMounted = false;
-    };
+    void load();
+    return () => { isMounted = false; };
   }, [user]);
 
   const savePlan = async () => {
     if (!user) return;
     setLoading(true);
-
-    const profileUpdate = supabase
-      .from("profiles")
-      .update({ allergies: numericProfile.allergies, blood_pressure: bloodPressure })
-      .eq("user_id", user.id);
-
+    const profileUpdate = supabase.from("profiles").update({ allergies: numericProfile.allergies, blood_pressure: bloodPressure }).eq("user_id", user.id);
     const goalPayload = {
-      user_id: user.id,
-      gender,
-      age: numericProfile.age,
-      height_cm: numericProfile.heightCm,
-      start_weight_kg: numericProfile.weightKg,
-      activity_level: activityLevel,
-      goal_type: goal,
-      target_calories: plan.calories,
-      target_protein_g: plan.proteinG,
-      target_fat_g: plan.fatG,
-      target_carbs_g: plan.carbsG,
-      plan_data: plan,
-      notification_channels: reminderChannels,
+      user_id: user.id, gender, age: numericProfile.age, height_cm: numericProfile.heightCm,
+      start_weight_kg: numericProfile.weightKg, activity_level: activityLevel, goal_type: goal,
+      target_calories: plan.calories, target_protein_g: plan.proteinG, target_fat_g: plan.fatG,
+      target_carbs_g: plan.carbsG, plan_data: plan, notification_channels: reminderChannels,
       telegram_chat_id: telegramChatId.trim() || null,
     };
-
-    const goalRequest = goalId
+    const goalReq = goalId
       ? supabase.from("user_goals").update(goalPayload as never).eq("id", goalId).select("id").single()
       : supabase.from("user_goals").insert(goalPayload as never).select("id").single();
 
-    const [{ error: profileError }, { data, error: goalError }] = await Promise.all([profileUpdate, goalRequest]);
-
-    const newGoalId = (data as { id: string } | null)?.id || goalId;
-    if (!profileError && !goalError && newGoalId) {
-      await saveReminders(newGoalId);
-      setGoalId(newGoalId);
-      toast({ title: "Жоспар сақталды", description: "AI Lifestyle Coach деректері жаңартылды." });
+    const [{ error: pe }, { data, error: ge }] = await Promise.all([profileUpdate, goalReq]);
+    const newId = (data as { id: string } | null)?.id || goalId;
+    if (!pe && !ge && newId) {
+      await saveReminders(newId);
+      setGoalId(newId);
+      toast({ title: "✅ Жоспар сақталды" });
     } else {
-      toast({
-        title: "Қате",
-        description: profileError?.message || goalError?.message || "Жоспарды сақтау мүмкін болмады.",
-        variant: "destructive",
-      });
+      toast({ title: "Қате", description: pe?.message || ge?.message, variant: "destructive" });
     }
-
     setLoading(false);
   };
 
   const saveReminders = async (activeGoalId: string) => {
     if (!user) return;
-    const rows = reminderTypes
-      .filter((item) => reminders[item.key])
-      .map((item) => ({
-        user_id: user.id,
-        goal_id: activeGoalId,
-        reminder_type: item.key,
-        channel: reminderChannels.telegram ? "telegram" : reminderChannels.browser ? "browser" : "in_app",
-        scheduled_time: reminderTimes[item.key],
-        is_enabled: true,
-        message_template:
-          item.key === "workout"
-            ? "Бүгін жаттығу күніңіз. Қарқынды өз жағдайыңызға қарай реттеңіз."
-            : item.key === "water"
-              ? `Су ішуді ұмытпаңыз. Күндік мақсат: ${plan.waterLiters} л.`
-              : item.key === "sleep"
-                ? "Ұйқы режимін дайындаңыз. Қалпына келу де жоспардың бөлігі."
-                : "Тамақтану уақытын өткізіп алмаңыз.",
-      }));
-
-    if (rows.length > 0) {
-      await supabase.from("lifestyle_reminders").upsert(rows, { onConflict: "user_id,reminder_type,channel" });
-    }
+    const rows = reminderTypes.filter((i) => reminders[i.key]).map((i) => ({
+      user_id: user.id, goal_id: activeGoalId, reminder_type: i.key,
+      channel: reminderChannels.telegram ? "telegram" : reminderChannels.browser ? "browser" : "in_app",
+      scheduled_time: reminderTimes[i.key], is_enabled: true,
+      message_template: i.key === "workout" ? "Бүгін жаттығу күніңіз!" : i.key === "water" ? `Су ішіңіз. Мақсат: ${plan.waterLiters} л.` : i.key === "sleep" ? "Ұйқу режимін сақтаңыз." : "Тамақтану уақыты.",
+    }));
+    if (rows.length > 0) await supabase.from("lifestyle_reminders").upsert(rows, { onConflict: "user_id,reminder_type,channel" });
   };
 
   const saveCheckIn = async () => {
     if (!user) return;
-    const { error } = await supabase.from("daily_checkins").upsert(
-      {
-        user_id: user.id,
-        goal_id: goalId,
-        completed_at: today,
-        workout_done: checkIn.workout,
-        water_done: checkIn.water,
-        meals_done: checkIn.meals,
-        sleep_done: checkIn.sleep,
-        mood_score: completedCount,
-        ai_feedback:
-          completedCount >= 3
-            ? "Керемет қарқын. Осы режимді ертең де сақтаңыз."
-            : "Бүгін толық орындалмаса да, бір шағын қадамнан қайта бастаңыз.",
-      },
-      { onConflict: "user_id,completed_at" },
-    );
-
-    if (error) {
-      toast({ title: "Қате", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    if (completedCount >= 3) {
-      toast({ title: "Жарайсыз", description: "Бүгінгі тәртіп жақсы орындалды." });
-    } else {
-      toast({ title: "Check-in сақталды", description: "AI ертең жеңіл қадамдармен қайта бағыттайды." });
-    }
+    const { error } = await supabase.from("daily_checkins").upsert({
+      user_id: user.id, goal_id: goalId, completed_at: today,
+      workout_done: checkIn.workout, water_done: checkIn.water, meals_done: checkIn.meals, sleep_done: checkIn.sleep,
+      mood_score: completedCount,
+      ai_feedback: completedCount >= 3 ? "Керемет! Осы қарқынды сақтаңыз 🔥" : "Кішкене ғана қадам — үлкен нәтиже.",
+    }, { onConflict: "user_id,completed_at" });
+    if (error) { toast({ title: "Қате", description: error.message, variant: "destructive" }); return; }
+    toast({ title: completedCount >= 3 ? "🔥 Жарайсыз!" : "✅ Сақталды" });
   };
 
   const saveWeight = async () => {
     if (!user || !weightEntry) return;
-    const value = Number(weightEntry);
-    const { error } = await supabase.from("weight_history").insert({
-      user_id: user.id,
-      goal_id: goalId,
-      weight_kg: value,
-      recorded_at: today,
-    });
-
-    if (error) {
-      toast({ title: "Қате", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setRecentWeights([{ id: crypto.randomUUID(), weight_kg: value, recorded_at: today }, ...recentWeights].slice(0, 8));
-    toast({ title: "Салмақ жазылды", description: "Прогресс кестесі жаңартылды." });
+    const v = Number(weightEntry);
+    const { error } = await supabase.from("weight_history").insert({ user_id: user.id, goal_id: goalId, weight_kg: v, recorded_at: today });
+    if (error) { toast({ title: "Қате", description: error.message, variant: "destructive" }); return; }
+    setRecentWeights([{ id: crypto.randomUUID(), weight_kg: v, recorded_at: today }, ...recentWeights].slice(0, 14));
+    toast({ title: "📊 Салмақ жазылды" });
   };
 
   const requestBrowserNotifications = async () => {
-    if (!("Notification" in window)) {
-      toast({ title: "Қолдау жоқ", description: "Бұл браузер push notification қолдамайды.", variant: "destructive" });
-      return;
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      setReminderChannels((current) => ({ ...current, browser: true }));
-      new Notification("AIZHAN Lifestyle Coach", { body: "Браузерлік ескертулер қосылды." });
-    }
+    if (!("Notification" in window)) { toast({ title: "Қолдау жоқ", variant: "destructive" }); return; }
+    const p = await Notification.requestPermission();
+    if (p === "granted") { setReminderChannels((c) => ({ ...c, browser: true })); new Notification("AIZHAN", { body: "Браузер ескертулері қосылды ✅" }); }
   };
 
   const copyTelegramLinkCode = async () => {
-    if (!telegramLinkCode) {
-      toast({ title: "Алдымен сақтаңыз", description: "Telegram ID шығуы үшін жоспарды бір рет сақтаңыз." });
-      return;
-    }
-
+    if (!telegramLinkCode) { toast({ title: "Алдымен жоспарды сақтаңыз" }); return; }
     await navigator.clipboard.writeText(telegramLinkCode);
-    toast({ title: "Көшірілді", description: "Telegram байланыстыру ID көшірілді." });
+    toast({ title: "📋 Көшірілді" });
   };
+
+  // Pro gate — non-Pro users see a promo screen
+  if (!proLoading && !isPro) {
+    return (
+      <Layout>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+          <div className="relative mb-6">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl gradient-medical shadow-elevated">
+              <HeartPulse className="h-9 w-9 text-primary-foreground" />
+            </div>
+            <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-400 shadow-lg">
+              <Crown className="h-4 w-4 text-amber-900" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">AI Lifestyle Coach</h1>
+          <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+            Жеке диетолог, фитнес тренер және дисциплина ассистенті — барлығы бір жерде. Pro жазылым арқылы ашыңыз.
+          </p>
+          <div className="mt-6 grid w-full max-w-sm gap-3">
+            {[
+              { icon: Utensils, text: "Жеке калория және макро жоспар" },
+              { icon: Dumbbell, text: "7 күндік жаттығу бағдарламасы" },
+              { icon: Scale, text: "Салмақ прогресі бақылау" },
+              { icon: Bell, text: "Telegram / push ескертулер" },
+              { icon: Target, text: "AI күнделікті тексеру (check-in)" },
+            ].map((f) => (
+              <div key={f.text} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 text-left text-sm">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <f.icon className="h-4 w-4 text-primary" />
+                </div>
+                <span>{f.text}</span>
+                <Lock className="ml-auto h-4 w-4 text-muted-foreground/50" />
+              </div>
+            ))}
+          </div>
+          <Button onClick={() => navigate("/pro")} className="mt-6 h-12 rounded-2xl gradient-medical px-8 text-base font-semibold text-primary-foreground shadow-elevated">
+            <Crown className="mr-2 h-5 w-5" /> Pro жазылым алу
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (proLoading) {
+    return (
+      <Layout>
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  const navItems: { key: ActiveSection; label: string; icon: React.ElementType; emoji: string }[] = [
+    { key: "dashboard", label: "Басты", icon: Sparkles, emoji: "✨" },
+    { key: "profile", label: "Профиль", icon: User, emoji: "👤" },
+    { key: "plan", label: "Жоспар", icon: Apple, emoji: "🍎" },
+    { key: "tracking", label: "Бақылау", icon: Target, emoji: "🎯" },
+    { key: "notifications", label: "Ескерту", icon: Bell, emoji: "🔔" },
+  ];
 
   return (
     <Layout>
-      <div className="space-y-5 pb-8">
-        <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="surface-soft rounded-3xl border border-border/80 p-5 shadow-card sm:p-6">
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card px-3 py-1.5 font-medium text-primary">
-                <Sparkles className="h-4 w-4" />
-                AI Lifestyle Coach
-              </span>
-              <span>диетолог + фитнес + дисциплина ассистенті</span>
-            </div>
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">Күнделікті режимді бақылау орталығы</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-              Жеке параметрлеріңізге сүйеніп калория, макро баланс, жаттығу, демалыс және ескерту жүйесін құрады. Ұсыныстар ақпараттық сипатта.
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              <Metric icon={Apple} label="Калория" value={`${plan.calories} ккал`} />
-              <Metric icon={Dumbbell} label="Ақуыз" value={`${plan.proteinG} г`} />
-              <Metric icon={Droplets} label="Су" value={`${plan.waterLiters} л`} />
-              <Metric icon={TrendingUp} label="Streak" value={`${streak} күн`} />
-            </div>
-          </div>
+      <div className="space-y-4 pb-8">
+        {/* Navigation pills */}
+        <nav className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setActiveSection(item.key)}
+              className={`flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all ${
+                activeSection === item.key
+                  ? "gradient-medical text-primary-foreground shadow-card"
+                  : "bg-card border border-border/70 text-muted-foreground hover:text-foreground hover:border-border"
+              }`}
+            >
+              <span className="text-base">{item.emoji}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-card dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100 sm:p-6">
-            <div className="flex items-start gap-3">
-              <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
-              <div>
-                <h2 className="font-semibold">Қауіпсіздік ескертуі</h2>
-                <p className="mt-2 text-sm leading-6 opacity-85">
-                  Бұл медициналық диагноз немесе ем емес. Қан қысымы, созылмалы ауру, жүктілік немесе ауыр симптом болса, дәрігерге жүгініңіз.
-                </p>
+        {/* Dashboard */}
+        {activeSection === "dashboard" && (
+          <div className="space-y-4">
+            {/* Hero stats */}
+            <div className="rounded-3xl gradient-medical p-5 text-primary-foreground shadow-elevated sm:p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm opacity-80">AI Lifestyle Coach</p>
+                  <h1 className="mt-1 text-xl font-bold sm:text-2xl">Сәлем, бүгінгі жоспар дайын 👋</h1>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard label="Калория" value={`${plan.calories}`} unit="ккал" icon="🔥" />
+                <StatCard label="Ақуыз" value={`${plan.proteinG}`} unit="г" icon="🥩" />
+                <StatCard label="Су" value={`${plan.waterLiters}`} unit="л" icon="💧" />
+                <StatCard label="Streak" value={`${streak}`} unit="күн" icon="🔥" />
               </div>
             </div>
-            <div className="mt-4 space-y-2 text-sm">
-              {plan.safetyNotes.map((note) => (
-                <p key={note} className="flex gap-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{note}</span>
-                </p>
-              ))}
+
+            {/* Today's workout */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-semibold">
+                  <span className="text-lg">{dayEmojis[currentDayWorkout.day] || "💪"}</span>
+                  Бүгін: {currentDayWorkout.day}
+                </h2>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${intensityColors[currentDayWorkout.intensity]}`}>
+                  {currentDayWorkout.intensity === "light" ? "Жеңіл" : currentDayWorkout.intensity === "moderate" ? "Орташа" : "Қарқынды"}
+                </span>
+              </div>
+              <p className="mt-2 text-sm font-medium text-primary">{currentDayWorkout.focus}</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">{currentDayWorkout.details}</p>
+              <Button onClick={() => setActiveSection("tracking")} variant="outline" className="mt-4 h-10 rounded-xl text-sm">
+                Check-in жасау <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Quick check-in progress */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold">Бүгінгі прогресс</h2>
+                <span className="text-2xl font-bold text-primary">{completedCount}/4</span>
+              </div>
+              <Progress value={completedCount * 25} className="mt-3 h-3 rounded-full" />
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                {(["workout", "water", "meals", "sleep"] as const).map((key) => {
+                  const labels = { workout: "💪", water: "💧", meals: "🍽️", sleep: "🌙" };
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setCheckIn((c) => ({ ...c, [key]: !c[key] }))}
+                      className={`flex flex-col items-center gap-1 rounded-2xl p-3 text-xs transition-all ${
+                        checkIn[key]
+                          ? "bg-primary/10 text-primary ring-2 ring-primary/20"
+                          : "bg-secondary/50 text-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-xl">{labels[key]}</span>
+                      <span className="font-medium">{checkIn[key] ? "✓" : ""}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {completedCount > 0 && (
+                <Button onClick={saveCheckIn} className="mt-4 h-10 w-full rounded-xl gradient-medical text-primary-foreground text-sm">
+                  <Send className="mr-2 h-4 w-4" /> Check-in жіберу
+                </Button>
+              )}
+            </div>
+
+            {/* Safety notes */}
+            <div className="rounded-3xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+              <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+                <ShieldAlert className="h-4 w-4" /> Ескерту
+              </p>
+              <ul className="mt-2 space-y-1 text-xs leading-5 text-amber-700 dark:text-amber-300/80">
+                {plan.safetyNotes.map((n) => <li key={n} className="flex gap-1.5"><AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />{n}</li>)}
+              </ul>
             </div>
           </div>
-        </section>
+        )}
 
-        <Tabs defaultValue="onboarding" className="space-y-4">
-          <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl p-1 sm:grid-cols-4">
-            <TabsTrigger value="onboarding" className="rounded-xl">Профиль</TabsTrigger>
-            <TabsTrigger value="plan" className="rounded-xl">Жоспар</TabsTrigger>
-            <TabsTrigger value="discipline" className="rounded-xl">Бақылау</TabsTrigger>
-            <TabsTrigger value="notifications" className="rounded-xl">Ескерту</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="onboarding" className="rounded-3xl border border-border/80 bg-card p-5 shadow-card sm:p-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Profile form */}
+        {activeSection === "profile" && (
+          <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card sm:p-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <span className="text-xl">👤</span> Жеке параметрлер
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">AI осы деректер бойынша жеке жоспар құрады</p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Жынысы">
-                <Select value={gender} onValueChange={(value) => setGender(value as Gender)}>
+                <Select value={gender} onValueChange={(v) => setGender(v as Gender)}>
                   <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="female">Әйел</SelectItem>
@@ -385,215 +424,273 @@ const LifestylePage = () => {
               <Field label="Бойы, см"><Input value={heightCm} onChange={(e) => setHeightCm(e.target.value)} type="number" className="h-11 rounded-xl" /></Field>
               <Field label="Салмағы, кг"><Input value={weightKg} onChange={(e) => setWeightKg(e.target.value)} type="number" className="h-11 rounded-xl" /></Field>
               <Field label="Белсенділік">
-                <Select value={activityLevel} onValueChange={(value) => setActivityLevel(value as ActivityLevel)}>
+                <Select value={activityLevel} onValueChange={(v) => setActivityLevel(v as ActivityLevel)}>
                   <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(activityLabels).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{Object.entries(activityLabels).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
               <Field label="Мақсат">
-                <Select value={goal} onValueChange={(value) => setGoal(value as LifestyleGoal)}>
+                <Select value={goal} onValueChange={(v) => setGoal(v as LifestyleGoal)}>
                   <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(goalLabels).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{Object.entries(goalLabels).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
-              <Field label="Аллергия">
-                <Input value={allergies} onChange={(e) => setAllergies(e.target.value)} className="h-11 rounded-xl" placeholder="жаңғақ, сүт, бал..." />
-              </Field>
+              <Field label="Аллергия"><Input value={allergies} onChange={(e) => setAllergies(e.target.value)} className="h-11 rounded-xl" placeholder="жаңғақ, сүт..." /></Field>
               <Field label="Қан қысымы">
-                <Select value={bloodPressure} onValueChange={(value) => setBloodPressure(value as BloodPressure)}>
+                <Select value={bloodPressure} onValueChange={(v) => setBloodPressure(v as BloodPressure)}>
                   <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(bloodPressureLabels).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{Object.entries(bloodPressureLabels).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
             </div>
-            <Button onClick={savePlan} disabled={loading} className="mt-5 h-11 rounded-xl gradient-medical px-5 text-primary-foreground">
-              {loading ? <div className="spinner-ring h-5 w-5" /> : <><Save className="mr-2 h-4 w-4" /> Жоспарды сақтау</>}
+            <Button onClick={savePlan} disabled={loading} className="mt-6 h-11 rounded-xl gradient-medical px-6 text-primary-foreground">
+              {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" /> : <><Save className="mr-2 h-4 w-4" /> Сақтау</>}
             </Button>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="plan" className="space-y-4">
-            <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-              <div className="rounded-3xl border border-border/80 bg-card p-5 shadow-card">
-                <h2 className="flex items-center gap-2 font-semibold"><Apple className="h-5 w-5 text-primary" /> Тамақтану режимі</h2>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
-                  <Macro label="Ақуыз" value={plan.proteinG} />
-                  <Macro label="Май" value={plan.fatG} />
-                  <Macro label="Көмірсу" value={plan.carbsG} />
+        {/* Plan view */}
+        {activeSection === "plan" && (
+          <div className="space-y-4">
+            {/* Macro overview */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 text-lg font-semibold"><span className="text-xl">🍎</span> Тамақтану жоспары</h2>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                  <Flame className="h-7 w-7 text-primary" />
                 </div>
-                <div className="mt-4 space-y-3">
-                  {plan.meals.map((meal) => (
-                    <div key={meal.title} className="rounded-2xl border border-border/70 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-medium">{meal.title}</p>
-                        <span className="text-xs text-muted-foreground">{meal.time}</span>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{meal.items.join(" • ")}</p>
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-2xl font-bold">{plan.calories} <span className="text-base font-normal text-muted-foreground">ккал</span></p>
+                  <p className="text-xs text-muted-foreground">Күнделікті калория нормасы</p>
                 </div>
               </div>
-
-              <div className="rounded-3xl border border-border/80 bg-card p-5 shadow-card">
-                <h2 className="flex items-center gap-2 font-semibold"><Dumbbell className="h-5 w-5 text-primary" /> Апталық жаттығу</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {plan.workouts.map((workout) => (
-                    <div key={workout.day} className="rounded-2xl border border-border/70 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-medium">{workout.day}</p>
-                        <span className="rounded-full bg-secondary px-2 py-1 text-xs text-muted-foreground">{workout.intensity}</span>
-                      </div>
-                      <p className="mt-1 text-sm font-medium text-primary">{workout.focus}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{workout.details}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <MacroCard label="Ақуыз" value={plan.proteinG} color="bg-blue-500" percent={Math.round((plan.proteinG * 4 / plan.calories) * 100)} />
+                <MacroCard label="Май" value={plan.fatG} color="bg-amber-500" percent={Math.round((plan.fatG * 9 / plan.calories) * 100)} />
+                <MacroCard label="Көмірсу" value={plan.carbsG} color="bg-emerald-500" percent={Math.round((plan.carbsG * 4 / plan.calories) * 100)} />
               </div>
-            </section>
-          </TabsContent>
+            </div>
 
-          <TabsContent value="discipline" className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-            <section className="rounded-3xl border border-border/80 bg-card p-5 shadow-card">
-              <h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-5 w-5 text-primary" /> Бүгінгі check-in</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Бүгінгі жаттығу: {currentDayWorkout.focus}. Орындалған әр қадам прогреске қосылады.</p>
+            {/* Meals */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 font-semibold"><Utensils className="h-5 w-5 text-primary" /> Тамақтану режимі</h2>
               <div className="mt-4 space-y-3">
-                <ToggleRow label="Жаттығу жасадым" checked={checkIn.workout} onChange={(checked) => setCheckIn((current) => ({ ...current, workout: checked }))} />
-                <ToggleRow label="Су нормасын ішіп жүрмін" checked={checkIn.water} onChange={(checked) => setCheckIn((current) => ({ ...current, water: checked }))} />
-                <ToggleRow label="Тамақтану жоспарын ұстандым" checked={checkIn.meals} onChange={(checked) => setCheckIn((current) => ({ ...current, meals: checked }))} />
-                <ToggleRow label="Ұйқы режимін сақтадым" checked={checkIn.sleep} onChange={(checked) => setCheckIn((current) => ({ ...current, sleep: checked }))} />
-              </div>
-              <Button onClick={saveCheckIn} className="mt-5 h-11 rounded-xl gradient-medical text-primary-foreground">
-                <Send className="mr-2 h-4 w-4" /> Check-in жіберу
-              </Button>
-            </section>
-
-            <section className="rounded-3xl border border-border/80 bg-card p-5 shadow-card">
-              <h2 className="flex items-center gap-2 font-semibold"><Scale className="h-5 w-5 text-primary" /> Салмақ прогресі</h2>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <Input value={weightEntry} onChange={(e) => setWeightEntry(e.target.value)} type="number" className="h-11 rounded-xl" placeholder="Бүгінгі салмақ" />
-                <Button onClick={saveWeight} variant="outline" className="h-11 rounded-xl">Жазу</Button>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Metric icon={HeartPulse} label="Қазіргі салмақ" value={lastWeight ? `${lastWeight} кг` : "-"} />
-                <Metric icon={Activity} label="Өзгеріс" value={`${weightDelta > 0 ? "+" : ""}${weightDelta} кг`} />
-              </div>
-              <div className="mt-4 space-y-2">
-                {recentWeights.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Әзірге салмақ тарихы жоқ.</p>
-                ) : recentWeights.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between rounded-2xl bg-secondary/60 px-3 py-2 text-sm">
-                    <span>{entry.recorded_at}</span>
-                    <span className="font-medium">{entry.weight_kg} кг</span>
+                {plan.meals.map((meal, i) => (
+                  <div key={meal.title} className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-secondary/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{["🌅", "☀️", "🌤️", "🌆"][i]}</span>
+                        <p className="font-medium">{meal.title}</p>
+                      </div>
+                      <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">{meal.time}</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{meal.items.join(" • ")}</p>
                   </div>
                 ))}
               </div>
-            </section>
-          </TabsContent>
+            </div>
 
-          <TabsContent value="notifications" className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-            <section className="rounded-3xl border border-border/80 bg-card p-5 shadow-card">
-              <h2 className="flex items-center gap-2 font-semibold"><Bell className="h-5 w-5 text-primary" /> Хабарлама арналары</h2>
-              <div className="mt-4 space-y-3">
-                <ToggleRow label="Сайт ішіндегі хабарламалар" checked={reminderChannels.in_app} onChange={(checked) => setReminderChannels((current) => ({ ...current, in_app: checked }))} />
-                <ToggleRow label="Браузерлік push notifications" checked={reminderChannels.browser} onChange={(checked) => checked ? requestBrowserNotifications() : setReminderChannels((current) => ({ ...current, browser: false }))} />
-                <ToggleRow label="Telegram бот ескертулері" checked={reminderChannels.telegram} onChange={(checked) => setReminderChannels((current) => ({ ...current, telegram: checked }))} />
-                {reminderChannels.telegram && (
-                  <div className="rounded-2xl border border-border/70 p-3">
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-                      <Field label="Telegram байланыстыру ID">
-                        <Input value={telegramLinkCode || "Жоспарды сақтағаннан кейін шығады"} readOnly className="h-11 rounded-xl bg-secondary/60" />
-                      </Field>
-                      <Button type="button" variant="outline" onClick={copyTelegramLinkCode} className="h-11 rounded-xl">
-                        <Copy className="mr-2 h-4 w-4" /> Көшіру
-                      </Button>
-                      <Button type="button" variant="outline" asChild className="h-11 rounded-xl">
-                        <a href={`${botUrl}?start=${telegramLinkCode || ""}`} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" /> Ботты ашу
-                        </a>
-                      </Button>
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                      Ботта Start басыңыз. Егер автоматты авторизация болмаса, осы ID-ді ботқа жіберіңіз. Байланыс орнағаннан кейін төмендегі chat ID автоматты толтырылады.
-                    </p>
-                    <Input value={telegramChatId} onChange={(e) => setTelegramChatId(e.target.value)} className="mt-3 h-11 rounded-xl" placeholder="Telegram chat ID автоматты толады немесе қолмен енгізіңіз" />
-                  </div>
-                )}
-              </div>
-              <div className="mt-5 space-y-3">
-                {reminderTypes.map((item) => {
-                  const Icon = item.icon;
+            {/* Workouts */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 font-semibold"><Dumbbell className="h-5 w-5 text-primary" /> Апталық жаттығу</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {plan.workouts.map((w) => {
+                  const isToday = w.day === currentDayWorkout.day;
                   return (
-                    <div key={item.key} className="grid gap-3 rounded-2xl border border-border/70 p-3 sm:grid-cols-[1fr_120px_auto] sm:items-center">
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-4 w-4 text-primary" />
-                        <span className="font-medium">{item.label}</span>
+                    <div key={w.day} className={`rounded-2xl border p-4 transition-all ${isToday ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10" : "border-border/60"}`}>
+                      <div className="flex items-center justify-between">
+                        <p className="flex items-center gap-2 font-medium">
+                          <span>{dayEmojis[w.day] || "💪"}</span> {w.day}
+                          {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">БҮГІН</span>}
+                        </p>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${intensityColors[w.intensity]}`}>
+                          {w.intensity === "light" ? "Жеңіл" : w.intensity === "moderate" ? "Орташа" : "Қарқынды"}
+                        </span>
                       </div>
-                      <Input value={reminderTimes[item.key]} onChange={(e) => setReminderTimes((current) => ({ ...current, [item.key]: e.target.value }))} type="time" className="h-10 rounded-xl" />
-                      <Switch checked={reminders[item.key]} onCheckedChange={(checked) => setReminders((current) => ({ ...current, [item.key]: checked }))} />
+                      <p className="mt-1.5 text-sm font-medium text-primary">{w.focus}</p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">{w.details}</p>
                     </div>
                   );
                 })}
               </div>
-              <Button onClick={savePlan} disabled={loading} className="mt-5 h-11 rounded-xl gradient-medical text-primary-foreground">
-                <Save className="mr-2 h-4 w-4" /> Ескертулерді сақтау
-              </Button>
-            </section>
+            </div>
+          </div>
+        )}
 
-            <section className="rounded-3xl border border-border/80 bg-card p-5 shadow-card">
-              <h2 className="font-semibold">Соңғы in-app хабарламалар</h2>
-              <div className="mt-4 space-y-3">
-                {inAppNotifications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Әзірге хабарлама жоқ. Ескертулер сақталғаннан кейін scheduler оларды толтырады.</p>
-                ) : inAppNotifications.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-border/70 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium">{item.title}</p>
-                      <span className="text-xs text-muted-foreground">{item.status}</span>
+        {/* Tracking */}
+        {activeSection === "tracking" && (
+          <div className="space-y-4">
+            {/* Check-in */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 text-lg font-semibold"><span className="text-xl">🎯</span> Бүгінгі check-in</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Бүгін: {currentDayWorkout.focus}</p>
+              <div className="mt-4 space-y-2.5">
+                {([
+                  { key: "workout" as const, label: "Жаттығу жасадым", emoji: "💪" },
+                  { key: "water" as const, label: "Су нормасын ішіп жүрмін", emoji: "💧" },
+                  { key: "meals" as const, label: "Тамақтану жоспарын ұстандым", emoji: "🍽️" },
+                  { key: "sleep" as const, label: "Ұйқу режимін сақтадым", emoji: "🌙" },
+                ]).map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setCheckIn((c) => ({ ...c, [item.key]: !c[item.key] }))}
+                    className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all ${
+                      checkIn[item.key]
+                        ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10"
+                        : "border-border/60 hover:bg-secondary/30"
+                    }`}
+                  >
+                    <span className="text-xl">{item.emoji}</span>
+                    <span className="flex-1 text-sm font-medium">{item.label}</span>
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${
+                      checkIn[item.key] ? "bg-primary text-primary-foreground" : "border-2 border-muted-foreground/30"
+                    }`}>
+                      {checkIn[item.key] && <CheckCircle2 className="h-4 w-4" />}
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.body}</p>
+                  </button>
+                ))}
+              </div>
+              <Button onClick={saveCheckIn} className="mt-4 h-11 w-full rounded-xl gradient-medical text-primary-foreground">
+                <Send className="mr-2 h-4 w-4" /> Check-in жіберу ({completedCount}/4)
+              </Button>
+            </div>
+
+            {/* Weight tracker */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 text-lg font-semibold"><span className="text-xl">⚖️</span> Салмақ</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-secondary/50 p-4 text-center">
+                  <p className="text-2xl font-bold">{lastWeight || "—"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Қазіргі (кг)</p>
+                </div>
+                <div className="rounded-2xl bg-secondary/50 p-4 text-center">
+                  <p className={`flex items-center justify-center gap-1 text-2xl font-bold ${weightDelta < 0 ? "text-emerald-500" : weightDelta > 0 ? "text-rose-500" : ""}`}>
+                    {weightDelta > 0 ? <TrendingUp className="h-5 w-5" /> : weightDelta < 0 ? <TrendingDown className="h-5 w-5" /> : null}
+                    {weightDelta > 0 ? "+" : ""}{weightDelta}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Өзгеріс (кг)</p>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Input value={weightEntry} onChange={(e) => setWeightEntry(e.target.value)} type="number" className="h-11 rounded-xl" placeholder="Бүгінгі салмақ" />
+                <Button onClick={saveWeight} className="h-11 rounded-xl gradient-medical text-primary-foreground"><Plus className="h-4 w-4" /></Button>
+              </div>
+              {recentWeights.length > 0 && (
+                <div className="mt-4 space-y-1.5">
+                  {recentWeights.slice(0, 7).map((e) => (
+                    <div key={e.id} className="flex items-center justify-between rounded-xl bg-secondary/40 px-3 py-2 text-sm">
+                      <span className="text-muted-foreground">{e.recorded_at}</span>
+                      <span className="font-semibold">{e.weight_kg} кг</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent check-ins */}
+            {recentCheckIns.length > 0 && (
+              <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+                <h2 className="flex items-center gap-2 font-semibold"><Trophy className="h-5 w-5 text-primary" /> Соңғы check-in тарихы</h2>
+                <div className="mt-3 space-y-2">
+                  {recentCheckIns.map((c) => {
+                    const done = [c.workout_done, c.water_done, c.meals_done, c.sleep_done].filter(Boolean).length;
+                    return (
+                      <div key={c.id} className="flex items-center justify-between rounded-xl bg-secondary/40 px-3 py-2.5 text-sm">
+                        <span className="text-muted-foreground">{c.completed_at}</span>
+                        <div className="flex items-center gap-2">
+                          <Progress value={done * 25} className="h-2 w-16 rounded-full" />
+                          <span className="text-xs font-medium">{done}/4</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Notifications */}
+        {activeSection === "notifications" && (
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 text-lg font-semibold"><span className="text-xl">🔔</span> Хабарлама арналары</h2>
+              <div className="mt-4 space-y-3">
+                <ToggleRow label="📱 Сайт ішіндегі хабарламалар" checked={reminderChannels.in_app} onChange={(v) => setReminderChannels((c) => ({ ...c, in_app: v }))} />
+                <ToggleRow label="🔔 Браузерлік push" checked={reminderChannels.browser} onChange={(v) => v ? requestBrowserNotifications() : setReminderChannels((c) => ({ ...c, browser: false }))} />
+                <ToggleRow label="✈️ Telegram бот" checked={reminderChannels.telegram} onChange={(v) => setReminderChannels((c) => ({ ...c, telegram: v }))} />
+                {reminderChannels.telegram && (
+                  <div className="rounded-2xl border border-border/60 p-4 space-y-3">
+                    <div className="flex gap-2">
+                      <Input value={telegramLinkCode || "Жоспарды сақтаңыз"} readOnly className="h-10 rounded-xl bg-secondary/50 text-xs" />
+                      <Button variant="outline" onClick={copyTelegramLinkCode} size="sm" className="h-10 rounded-xl"><Copy className="h-4 w-4" /></Button>
+                      <Button variant="outline" asChild size="sm" className="h-10 rounded-xl">
+                        <a href={`${botUrl}?start=${telegramLinkCode || ""}`} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
+                      </Button>
+                    </div>
+                    <Input value={telegramChatId} onChange={(e) => setTelegramChatId(e.target.value)} className="h-10 rounded-xl" placeholder="Telegram chat ID" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="font-semibold">Ескерту уақыттары</h2>
+              <div className="mt-4 space-y-2.5">
+                {reminderTypes.map((item) => (
+                  <div key={item.key} className="flex items-center gap-3 rounded-2xl border border-border/60 p-3">
+                    <span className="text-lg">{item.emoji}</span>
+                    <span className="flex-1 text-sm font-medium">{item.label}</span>
+                    <Input value={reminderTimes[item.key]} onChange={(e) => setReminderTimes((c) => ({ ...c, [item.key]: e.target.value }))} type="time" className="h-9 w-[100px] rounded-xl text-xs" />
+                    <Switch checked={reminders[item.key]} onCheckedChange={(v) => setReminders((c) => ({ ...c, [item.key]: v }))} />
                   </div>
                 ))}
               </div>
-            </section>
-          </TabsContent>
-        </Tabs>
+              <Button onClick={savePlan} disabled={loading} className="mt-5 h-11 w-full rounded-xl gradient-medical text-primary-foreground">
+                <Save className="mr-2 h-4 w-4" /> Ескертулерді сақтау
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
 };
 
+// Sub-components
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block">
-    <span className="mb-2 block text-sm font-medium">{label}</span>
+    <span className="mb-1.5 block text-sm font-medium">{label}</span>
     {children}
   </label>
 );
 
-const Metric = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) => (
-  <div className="rounded-2xl border border-border/70 bg-card/70 p-3">
-    <Icon className="h-4 w-4 text-primary" />
-    <p className="mt-2 text-xs text-muted-foreground">{label}</p>
-    <p className="mt-1 text-sm font-semibold">{value}</p>
+const StatCard = ({ label, value, unit, icon }: { label: string; value: string; unit: string; icon: string }) => (
+  <div className="rounded-2xl bg-white/10 backdrop-blur-sm p-3">
+    <p className="text-xs opacity-70">{icon} {label}</p>
+    <p className="mt-1 text-lg font-bold">{value} <span className="text-sm font-normal opacity-70">{unit}</span></p>
   </div>
 );
 
-const Macro = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-2xl bg-secondary/70 p-3">
-    <p className="text-lg font-semibold">{value}г</p>
+const MacroCard = ({ label, value, color, percent }: { label: string; value: number; color: string; percent: number }) => (
+  <div className="rounded-2xl bg-secondary/50 p-3 text-center">
+    <p className="text-xl font-bold">{value}<span className="text-sm font-normal text-muted-foreground">г</span></p>
     <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="mx-auto mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(percent, 100)}%` }} />
+    </div>
+    <p className="mt-1 text-[10px] text-muted-foreground">{percent}%</p>
   </div>
 );
 
-const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) => (
-  <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 p-3">
+const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
+  <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 p-3">
     <span className="text-sm font-medium">{label}</span>
     <Switch checked={checked} onCheckedChange={onChange} />
   </div>
 );
+
+// Need to import User icon used in navItems
+import { User } from "lucide-react";
 
 export default LifestylePage;
