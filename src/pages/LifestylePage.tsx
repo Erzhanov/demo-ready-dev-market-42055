@@ -37,6 +37,7 @@ import {
   TrendingDown,
   TrendingUp,
   Trophy,
+  User,
   Utensils,
   Zap,
 } from "lucide-react";
@@ -690,7 +691,5 @@ const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boole
   </div>
 );
 
-// Need to import User icon used in navItems
-import { User } from "lucide-react";
 
 export default LifestylePage;
