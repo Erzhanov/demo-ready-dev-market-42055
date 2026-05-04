@@ -11,10 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProStatus } from "@/hooks/use-pro-status";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Activity,
   AlertTriangle,
   Apple,
-  ArrowRight,
   Bell,
   CheckCircle2,
   ChevronRight,
@@ -39,7 +37,7 @@ import {
   Trophy,
   User,
   Utensils,
-  Zap,
+  
 } from "lucide-react";
 import {
   ActivityLevel,
