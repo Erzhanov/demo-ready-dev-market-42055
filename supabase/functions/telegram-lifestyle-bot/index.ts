@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+
 type TelegramMessage = {
   message_id: number;
   text?: string;
@@ -15,6 +17,7 @@ type TelegramMessage = {
 };
 
 type TelegramUpdate = {
+  update_id: number;
   message?: TelegramMessage;
 };
 
@@ -55,6 +58,20 @@ const goalDelta: Record<string, number> = {
 
 const days = ["Дүйсенбі", "Сейсенбі", "Сәрсенбі", "Бейсенбі", "Жұма", "Сенбі", "Жексенбі"];
 
+function getGatewayHeaders() {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+  const TELEGRAM_API_KEY = Deno.env.get("TELEGRAM_API_KEY");
+  if (!TELEGRAM_API_KEY) throw new Error("TELEGRAM_API_KEY is not configured");
+
+  return {
+    "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+    "X-Connection-Api-Key": TELEGRAM_API_KEY,
+    "Content-Type": "application/json",
+  };
+}
+
 function calculatePlan(goal: GoalRow) {
   const baseBmr =
     10 * Number(goal.start_weight_kg) +
@@ -69,61 +86,30 @@ function calculatePlan(goal: GoalRow) {
   const restDays = goal.goal_type === "gain_weight" ? ["Сәрсенбі", "Жексенбі"] : ["Бейсенбі", "Жексенбі"];
 
   return {
-    calories,
-    proteinG,
-    fatG,
-    carbsG,
-    waterLiters,
-    restDays,
+    calories, proteinG, fatG, carbsG, waterLiters, restDays,
     workouts: days.map((day, index) => {
-      if (restDays.includes(day)) {
-        return { day, focus: "Қалпына келу", details: "Серуен, созылу, ұйқы режимін сақтау." };
-      }
-
-      if (goal.goal_type === "lose_weight") {
-        return {
-          day,
-          focus: index % 2 === 0 ? "Кардио" : "Толық денеге жеңіл жаттығу",
-          details: "Отырып-тұру, тіреп тұру, қолды бүгіп-жазудың жеңіл нұсқалары.",
-        };
-      }
-
-      if (goal.goal_type === "gain_weight") {
-        return {
-          day,
-          focus: index % 2 === 0 ? "Күш жаттығулары" : "Жоғарғы/төменгі дене",
-          details: "Орташа салмақ, сет арасында демалу, ақуызды ас.",
-        };
-      }
-
-      return {
-        day,
-        focus: "Теңгерімді толық дене жаттығуы",
-        details: "Толық дене жаттығуы, қозғалыс икемділігі, серуен.",
-      };
+      if (restDays.includes(day)) return { day, focus: "Қалпына келу", details: "Серуен, созылу, ұйқы режимін сақтау." };
+      if (goal.goal_type === "lose_weight") return { day, focus: index % 2 === 0 ? "Кардио" : "Толық денеге жеңіл жаттығу", details: "Отырып-тұру, тіреп тұру, қолды бүгіп-жазудың жеңіл нұсқалары." };
+      if (goal.goal_type === "gain_weight") return { day, focus: index % 2 === 0 ? "Күш жаттығулары" : "Жоғарғы/төменгі дене", details: "Орташа салмақ, сет арасында демалу, ақуызды ас." };
+      return { day, focus: "Теңгерімді толық дене жаттығуы", details: "Толық дене жаттығуы, қозғалыс икемділігі, серуен." };
     }),
   };
 }
 
 function extractCommand(text = "") {
   const [command, ...rest] = text.trim().split(/\s+/);
-  return {
-    command: command?.toLowerCase() || "",
-    value: rest.join(" ").trim(),
-  };
+  return { command: command?.toLowerCase() || "", value: rest.join(" ").trim() };
 }
 
-function today() {
+function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
 async function sendTelegram(chatId: string | number, text: string) {
-  const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
-  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured");
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const headers = getGatewayHeaders();
+  const response = await fetch(`${GATEWAY_URL}/sendMessage`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       chat_id: chatId,
       text,
@@ -141,7 +127,8 @@ async function sendTelegram(chatId: string | number, text: string) {
   });
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    const body = await response.text();
+    throw new Error(`Telegram API failed [${response.status}]: ${body}`);
   }
 }
 
@@ -160,7 +147,6 @@ async function getLinkedGoal(supabase: ReturnType<typeof createAdminClient>, cha
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-
   return data as GoalRow | null;
 }
 
@@ -183,17 +169,10 @@ async function linkByCode(supabase: ReturnType<typeof createAdminClient>, chat: 
 
   if (error || !goal) return null;
 
-  const channels = {
-    ...((goal.notification_channels || {}) as Record<string, boolean>),
-    telegram: true,
-  };
-
+  const channels = { ...((goal.notification_channels || {}) as Record<string, boolean>), telegram: true };
   const { data: updated } = await supabase
     .from("user_goals")
-    .update({
-      telegram_chat_id: String(chat.id),
-      notification_channels: channels,
-    })
+    .update({ telegram_chat_id: String(chat.id), notification_channels: channels })
     .eq("id", goal.id)
     .select("*")
     .single();
@@ -204,7 +183,6 @@ async function linkByCode(supabase: ReturnType<typeof createAdminClient>, chat: 
 function planText(goal: GoalRow, name: string) {
   const plan = calculatePlan(goal);
   const workout = plan.workouts[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
-
   return [
     `Сәлем, <b>${name}</b>.`,
     `Мақсат: <b>${goalLabels[goal.goal_type]}</b>`,
@@ -225,13 +203,9 @@ async function handleUserMessage(message: TelegramMessage) {
   if (command === "/start") {
     const linked = await linkByCode(supabase, message.chat, value);
     if (!linked) {
-      await sendTelegram(
-        message.chat.id,
-        "AIZHAN Lifestyle ботына қош келдіңіз.\n\nСайттағы Lifestyle -> Ескерту бөліміне кіріп, Telegram байланыстыру ID көшіріңіз де, осы жерге жіберіңіз немесе /start ID түрінде бастаңыз.",
-      );
+      await sendTelegram(message.chat.id, "AIZHAN Lifestyle ботына қош келдіңіз.\n\nСайттағы Lifestyle -> Ескерту бөліміне кіріп, Telegram байланыстыру ID көшіріңіз де, осы жерге жіберіңіз немесе /start ID түрінде бастаңыз.");
       return;
     }
-
     const name = await getProfileName(supabase, linked.user_id);
     await sendTelegram(message.chat.id, `Авторизация сәтті өтті.\nПрофиль: <b>${name}</b>\n\n${planText(linked, name)}`);
     return;
@@ -255,17 +229,11 @@ async function handleUserMessage(message: TelegramMessage) {
   const name = await getProfileName(supabase, goal.user_id);
 
   if (command === "/help") {
-    await sendTelegram(
-      message.chat.id,
-      "Командалар:\n/plan - толық жоспар\n/norms - калория мен макро\n/weight 70 - салмақ енгізу\n/goal lose_weight|gain_weight|maintain - мақсат ауыстыру\n/checkin workout water meals sleep - күндік бақылау\n/reminders - ескертулер",
-    );
+    await sendTelegram(message.chat.id, "Командалар:\n/plan - толық жоспар\n/norms - калория мен макро\n/weight 70 - салмақ енгізу\n/goal lose_weight|gain_weight|maintain - мақсат ауыстыру\n/checkin workout water meals sleep - күндік бақылау\n/reminders - ескертулер");
     return;
   }
 
-  if (command === "/plan") {
-    await sendTelegram(message.chat.id, planText(goal, name));
-    return;
-  }
+  if (command === "/plan") { await sendTelegram(message.chat.id, planText(goal, name)); return; }
 
   if (command === "/norms") {
     const plan = calculatePlan(goal);
@@ -279,13 +247,7 @@ async function handleUserMessage(message: TelegramMessage) {
       await sendTelegram(message.chat.id, "Салмақты былай енгізіңіз: /weight 70");
       return;
     }
-
-    await supabase.from("weight_history").insert({
-      user_id: goal.user_id,
-      goal_id: goal.id,
-      weight_kg: weight,
-      recorded_at: today(),
-    });
+    await supabase.from("weight_history").insert({ user_id: goal.user_id, goal_id: goal.id, weight_kg: weight, recorded_at: todayStr() });
     await sendTelegram(message.chat.id, `Салмақ жазылды: <b>${weight} кг</b>.`);
     return;
   }
@@ -295,40 +257,22 @@ async function handleUserMessage(message: TelegramMessage) {
       await sendTelegram(message.chat.id, "Мақсатты былай ауыстырыңыз: /goal lose_weight немесе /goal gain_weight немесе /goal maintain");
       return;
     }
-
     const nextGoal = { ...goal, goal_type: value as GoalRow["goal_type"] };
     const plan = calculatePlan(nextGoal);
-    await supabase
-      .from("user_goals")
-      .update({
-        goal_type: value,
-        target_calories: plan.calories,
-        target_protein_g: plan.proteinG,
-        target_fat_g: plan.fatG,
-        target_carbs_g: plan.carbsG,
-        plan_data: plan,
-      })
-      .eq("id", goal.id);
+    await supabase.from("user_goals").update({ goal_type: value, target_calories: plan.calories, target_protein_g: plan.proteinG, target_fat_g: plan.fatG, target_carbs_g: plan.carbsG, plan_data: plan }).eq("id", goal.id);
     await sendTelegram(message.chat.id, `Мақсат жаңартылды: <b>${goalLabels[value]}</b>.\n${planText(nextGoal, name)}`);
     return;
   }
 
   if (command === "/checkin") {
     const tokens = value.toLowerCase().split(/\s+/);
-    await supabase.from("daily_checkins").upsert(
-      {
-        user_id: goal.user_id,
-        goal_id: goal.id,
-        completed_at: today(),
-        workout_done: tokens.includes("workout"),
-        water_done: tokens.includes("water"),
-        meals_done: tokens.includes("meals"),
-        sleep_done: tokens.includes("sleep"),
-        mood_score: tokens.filter(Boolean).length,
-        ai_feedback: tokens.length >= 3 ? "Керемет тәртіп. Осы қарқынды сақтаңыз." : "Бір қадам да прогресс. Ертең қайта жалғастырыңыз.",
-      },
-      { onConflict: "user_id,completed_at" },
-    );
+    await supabase.from("daily_checkins").upsert({
+      user_id: goal.user_id, goal_id: goal.id, completed_at: todayStr(),
+      workout_done: tokens.includes("workout"), water_done: tokens.includes("water"),
+      meals_done: tokens.includes("meals"), sleep_done: tokens.includes("sleep"),
+      mood_score: tokens.filter(Boolean).length,
+      ai_feedback: tokens.length >= 3 ? "Керемет тәртіп. Осы қарқынды сақтаңыз." : "Бір қадам да прогресс. Ертең қайта жалғастырыңыз.",
+    }, { onConflict: "user_id,completed_at" });
     await sendTelegram(message.chat.id, "Check-in сақталды.");
     return;
   }
@@ -340,7 +284,6 @@ async function handleUserMessage(message: TelegramMessage) {
       .eq("user_id", goal.user_id)
       .eq("is_enabled", true)
       .order("scheduled_time", { ascending: true });
-
     const lines = (data || []).map((item) => `${item.scheduled_time} - ${item.reminder_type} (${item.channel})`);
     await sendTelegram(message.chat.id, lines.length ? `Ескертулер:\n${lines.join("\n")}` : "Әзірге белсенді ескерту жоқ. Сайттағы Ескерту бөлімінен қосыңыз.");
     return;
@@ -354,7 +297,6 @@ async function sendDueNotifications() {
   const { data: notifications } = await supabase
     .from("notifications")
     .select("id, user_id, title, body")
-    .eq("channel", "telegram")
     .eq("status", "pending")
     .lte("scheduled_for", new Date().toISOString())
     .limit(50);
@@ -385,6 +327,67 @@ async function sendDueNotifications() {
   return sent;
 }
 
+async function pollUpdates() {
+  const supabase = createAdminClient();
+  const MAX_RUNTIME_MS = 55_000;
+  const MIN_REMAINING_MS = 5_000;
+  const startTime = Date.now();
+
+  // Get or create bot state
+  const { data: state } = await supabase
+    .from("telegram_bot_state")
+    .select("update_offset")
+    .eq("id", 1)
+    .single();
+
+  let currentOffset = state?.update_offset || 0;
+  let totalProcessed = 0;
+  const headers = getGatewayHeaders();
+
+  while (true) {
+    const elapsed = Date.now() - startTime;
+    const remainingMs = MAX_RUNTIME_MS - elapsed;
+    if (remainingMs < MIN_REMAINING_MS) break;
+
+    const timeout = Math.min(50, Math.floor(remainingMs / 1000) - 5);
+    if (timeout < 1) break;
+
+    const response = await fetch(`${GATEWAY_URL}/getUpdates`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ offset: currentOffset, timeout, allowed_updates: ["message"] }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("getUpdates failed:", data);
+      break;
+    }
+
+    const updates: TelegramUpdate[] = data.result ?? [];
+    if (updates.length === 0) continue;
+
+    for (const update of updates) {
+      if (update.message) {
+        try {
+          await handleUserMessage(update.message);
+        } catch (err) {
+          console.error("Error handling message:", err);
+        }
+      }
+    }
+
+    const newOffset = Math.max(...updates.map((u) => u.update_id)) + 1;
+    await supabase
+      .from("telegram_bot_state")
+      .upsert({ id: 1, update_offset: newOffset, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    currentOffset = newOffset;
+    totalProcessed += updates.length;
+  }
+
+  return totalProcessed;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -396,6 +399,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, sent }), { headers: jsonHeaders });
     }
 
+    if (body?.mode === "poll") {
+      const processed = await pollUpdates();
+      return new Response(JSON.stringify({ ok: true, processed }), { headers: jsonHeaders });
+    }
+
+    // Legacy webhook mode
     const update = body as TelegramUpdate;
     if (update.message) await handleUserMessage(update.message);
 
