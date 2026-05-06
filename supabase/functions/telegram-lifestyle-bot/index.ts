@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+const GATEWAY_URL = "https://ai-zhan.vercel.app/";
 const WEBAPP_URL = "https://ai-zhan.vercel.app/";
 
 type TelegramMessage = {
