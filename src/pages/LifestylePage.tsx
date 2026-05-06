@@ -631,39 +631,119 @@ const LifestylePage = () => {
         {/* Notifications */}
         {activeSection === "notifications" && (
           <div className="space-y-4">
-            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
-              <h2 className="flex items-center gap-2 text-lg font-semibold"><span className="text-xl">🔔</span> Хабарлама арналары</h2>
-              <div className="mt-4 space-y-3">
-                <ToggleRow label="📱 Сайт ішіндегі хабарламалар" checked={reminderChannels.in_app} onChange={(v) => setReminderChannels((c) => ({ ...c, in_app: v }))} />
-                <ToggleRow label="🔔 Браузерлік push" checked={reminderChannels.browser} onChange={(v) => v ? requestBrowserNotifications() : setReminderChannels((c) => ({ ...c, browser: false }))} />
-                <ToggleRow label="✈️ Telegram бот" checked={reminderChannels.telegram} onChange={(v) => handleTelegramToggle(v)} />
+            {/* Telegram Feature Card */}
+            <div className="rounded-3xl border border-border/70 bg-gradient-to-br from-[hsl(var(--primary)/0.05)] to-card p-5 shadow-card overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#229ED9]/10">
+                    <Send className="h-6 w-6 text-[#229ED9]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Telegram Bot</h2>
+                    <p className="text-xs text-muted-foreground">AI ассистент Telegram-да</p>
+                  </div>
+                  <Switch
+                    checked={reminderChannels.telegram}
+                    onCheckedChange={(v) => handleTelegramToggle(v)}
+                    className="ml-auto"
+                  />
+                </div>
+
                 {reminderChannels.telegram && (
-                  <div className="rounded-2xl border border-border/60 p-4 space-y-3">
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
                     {telegramChatId ? (
-                      <div className="flex items-center gap-2 text-sm text-green-500 font-medium">
-                        <span>✅</span> Telegram қосылған (ID: {telegramChatId})
+                      <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Telegram қосылған!</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Хабарламалар жіберіледі</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <div className="rounded-xl bg-background/60 p-2.5 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Командалар</p>
+                            <p className="text-lg font-bold mt-0.5">8+</p>
+                          </div>
+                          <div className="rounded-xl bg-background/60 p-2.5 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Мини қосымша</p>
+                            <p className="text-lg font-bold mt-0.5">✅</p>
+                          </div>
+                        </div>
                       </div>
                     ) : (
-                      <>
-                        <p className="text-xs text-muted-foreground">Бұл кодты Telegram ботқа жіберіңіз. Код бір рет қолданылады.</p>
-                        <div className="flex gap-2 items-center">
-                          <Input value={telegramLinkCode || "Код жасалуда..."} readOnly className="h-10 rounded-xl bg-secondary/50 text-sm font-mono tracking-widest text-center" />
-                          <Button variant="outline" onClick={copyTelegramLinkCode} size="sm" className="h-10 rounded-xl"><Copy className="h-4 w-4" /></Button>
+                      <div className="space-y-4">
+                        {/* Steps */}
+                        <div className="space-y-3">
+                          <StepItem number={1} title="Кодты көшіріңіз" active />
+                          <div className="ml-8 rounded-2xl bg-secondary/60 border border-border/50 p-3">
+                            <div className="flex gap-2 items-center">
+                              <div className="flex-1 rounded-xl bg-background px-4 py-2.5 text-center font-mono text-lg tracking-[0.3em] font-bold text-primary select-all">
+                                {telegramLinkCode || "..."}
+                              </div>
+                              <Button variant="outline" onClick={copyTelegramLinkCode} size="sm" className="h-10 w-10 rounded-xl shrink-0 p-0">
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-2 text-center">⏱️ Бір реттік код — қолданғаннан кейін жойылады</p>
+                          </div>
+
+                          <StepItem number={2} title="Telegram ботқа жіберіңіз" />
+                          <div className="ml-8">
+                            <Button asChild className="h-12 w-full rounded-2xl bg-[#229ED9] hover:bg-[#1a8ec5] text-white font-semibold shadow-lg shadow-[#229ED9]/20">
+                              <a href={`${botUrl}?start=${telegramLinkCode || ""}`} target="_blank" rel="noreferrer" className="flex items-center gap-2.5">
+                                <Send className="h-5 w-5" />
+                                AIZHAN Bot-ты ашу
+                                <ExternalLink className="h-4 w-4 ml-auto opacity-60" />
+                              </a>
+                            </Button>
+                          </div>
+
+                          <StepItem number={3} title="Автоматты байланысу" />
+                          <p className="ml-8 text-xs text-muted-foreground">Код жіберілген соң аккаунтыңыз автоматты қосылады.</p>
                         </div>
-                        <Button variant="outline" asChild size="sm" className="h-10 w-full rounded-xl">
-                          <a href={`${botUrl}?start=${telegramLinkCode || ""}`} target="_blank" rel="noreferrer" className="flex items-center gap-2">
-                            <ExternalLink className="h-4 w-4" /> Ботқа өту
-                          </a>
-                        </Button>
-                      </>
+
+                        {/* Bot features preview */}
+                        <div className="rounded-2xl bg-secondary/40 border border-border/50 p-4">
+                          <p className="text-xs font-semibold mb-2.5 text-muted-foreground uppercase tracking-wider">Бот мүмкіндіктері</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { emoji: "📋", label: "Жеке жоспар" },
+                              { emoji: "✅", label: "Check-in" },
+                              { emoji: "⚖️", label: "Салмақ бақылау" },
+                              { emoji: "🔔", label: "Ескертулер" },
+                              { emoji: "🎯", label: "Мақсат ауыстыру" },
+                              { emoji: "🌐", label: "Мини қосымша" },
+                            ].map((f) => (
+                              <div key={f.label} className="flex items-center gap-2 rounded-xl bg-background/60 px-3 py-2 text-xs">
+                                <span>{f.emoji}</span>
+                                <span className="font-medium">{f.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             </div>
 
+            {/* Other channels */}
             <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
-              <h2 className="font-semibold">Ескерту уақыттары</h2>
+              <h2 className="flex items-center gap-2 text-lg font-semibold"><span className="text-xl">🔔</span> Хабарлама арналары</h2>
+              <div className="mt-4 space-y-3">
+                <ToggleRow label="📱 Сайт ішіндегі хабарламалар" checked={reminderChannels.in_app} onChange={(v) => setReminderChannels((c) => ({ ...c, in_app: v }))} />
+                <ToggleRow label="🔔 Браузерлік push" checked={reminderChannels.browser} onChange={(v) => v ? requestBrowserNotifications() : setReminderChannels((c) => ({ ...c, browser: false }))} />
+              </div>
+            </div>
+
+            {/* Reminder times */}
+            <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-card">
+              <h2 className="flex items-center gap-2 font-semibold"><span className="text-lg">⏰</span> Ескерту уақыттары</h2>
               <div className="mt-4 space-y-2.5">
                 {reminderTypes.map((item) => (
                   <div key={item.key} className="flex items-center gap-3 rounded-2xl border border-border/60 p-3">
@@ -715,6 +795,15 @@ const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boole
   <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 p-3">
     <span className="text-sm font-medium">{label}</span>
     <Switch checked={checked} onCheckedChange={onChange} />
+  </div>
+);
+
+const StepItem = ({ number, title, active }: { number: number; title: string; active?: boolean }) => (
+  <div className="flex items-center gap-3">
+    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+      {number}
+    </div>
+    <span className={`text-sm font-medium ${active ? "text-foreground" : "text-muted-foreground"}`}>{title}</span>
   </div>
 );
 
