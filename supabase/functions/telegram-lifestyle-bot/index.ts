@@ -9,6 +9,7 @@ const corsHeaders = {
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+const WEBAPP_URL = "https://id-preview--100df08b-25d6-4c1a-837b-4627934fb764.lovable.app";
 
 type TelegramMessage = {
   message_id: number;
@@ -39,9 +40,15 @@ type GoalRow = {
 };
 
 const goalLabels: Record<string, string> = {
-  lose_weight: "Арықтау",
-  gain_weight: "Салмақ қосу",
-  maintain: "Форма сақтау",
+  lose_weight: "🔥 Арықтау",
+  gain_weight: "💪 Салмақ қосу",
+  maintain: "⚖️ Форма сақтау",
+};
+
+const goalEmojis: Record<string, string> = {
+  lose_weight: "🔥",
+  gain_weight: "💪",
+  maintain: "⚖️",
 };
 
 const activityMultiplier: Record<string, number> = {
@@ -57,14 +64,16 @@ const goalDelta: Record<string, number> = {
 };
 
 const days = ["Дүйсенбі", "Сейсенбі", "Сәрсенбі", "Бейсенбі", "Жұма", "Сенбі", "Жексенбі"];
+const dayEmojis: Record<string, string> = {
+  "Дүйсенбі": "🔥", "Сейсенбі": "⚡", "Сәрсенбі": "🧘", "Бейсенбі": "💪",
+  "Жұма": "🏃", "Сенбі": "🎯", "Жексенбі": "😴",
+};
 
 function getGatewayHeaders() {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
   const TELEGRAM_API_KEY = Deno.env.get("TELEGRAM_API_KEY");
   if (!TELEGRAM_API_KEY) throw new Error("TELEGRAM_API_KEY is not configured");
-
   return {
     "Authorization": `Bearer ${LOVABLE_API_KEY}`,
     "X-Connection-Api-Key": TELEGRAM_API_KEY,
@@ -88,10 +97,10 @@ function calculatePlan(goal: GoalRow) {
   return {
     calories, proteinG, fatG, carbsG, waterLiters, restDays,
     workouts: days.map((day, index) => {
-      if (restDays.includes(day)) return { day, focus: "Қалпына келу", details: "Серуен, созылу, ұйқы режимін сақтау." };
-      if (goal.goal_type === "lose_weight") return { day, focus: index % 2 === 0 ? "Кардио" : "Толық денеге жеңіл жаттығу", details: "Отырып-тұру, тіреп тұру, қолды бүгіп-жазудың жеңіл нұсқалары." };
-      if (goal.goal_type === "gain_weight") return { day, focus: index % 2 === 0 ? "Күш жаттығулары" : "Жоғарғы/төменгі дене", details: "Орташа салмақ, сет арасында демалу, ақуызды ас." };
-      return { day, focus: "Теңгерімді толық дене жаттығуы", details: "Толық дене жаттығуы, қозғалыс икемділігі, серуен." };
+      if (restDays.includes(day)) return { day, focus: "Қалпына келу", details: "Серуен, созылу, ұйқы режимін сақтау.", intensity: "light" };
+      if (goal.goal_type === "lose_weight") return { day, focus: index % 2 === 0 ? "Кардио" : "Толық денеге жеңіл жаттығу", details: "Отырып-тұру, тіреп тұру, қолды бүгіп-жазу.", intensity: "moderate" };
+      if (goal.goal_type === "gain_weight") return { day, focus: index % 2 === 0 ? "Күш жаттығулары" : "Жоғарғы/төменгі дене", details: "Орташа салмақ, сет арасында демалу.", intensity: "active" };
+      return { day, focus: "Теңгерімді жаттығу", details: "Толық дене жаттығуы, икемділік.", intensity: "moderate" };
     }),
   };
 }
@@ -105,7 +114,12 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function sendTelegram(chatId: string | number, text: string) {
+function progressBar(value: number, max: number, length = 10): string {
+  const filled = Math.round((value / max) * length);
+  return "▓".repeat(Math.min(filled, length)) + "░".repeat(Math.max(0, length - filled));
+}
+
+async function sendTelegram(chatId: string | number, text: string, extra: Record<string, unknown> = {}) {
   const headers = getGatewayHeaders();
   const response = await fetch(`${GATEWAY_URL}/sendMessage`, {
     method: "POST",
@@ -115,14 +129,7 @@ async function sendTelegram(chatId: string | number, text: string) {
       text,
       parse_mode: "HTML",
       disable_web_page_preview: true,
-      reply_markup: {
-        keyboard: [
-          [{ text: "/plan" }, { text: "/norms" }],
-          [{ text: "/checkin workout water meals sleep" }],
-          [{ text: "/weight 70" }, { text: "/reminders" }],
-        ],
-        resize_keyboard: true,
-      },
+      ...extra,
     }),
   });
 
@@ -130,6 +137,57 @@ async function sendTelegram(chatId: string | number, text: string) {
     const body = await response.text();
     throw new Error(`Telegram API failed [${response.status}]: ${body}`);
   }
+}
+
+function mainKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: "📋 Жоспар", callback_data: "cmd_plan" },
+        { text: "📊 Нормалар", callback_data: "cmd_norms" },
+      ],
+      [
+        { text: "✅ Check-in", callback_data: "cmd_checkin_menu" },
+        { text: "⚖️ Салмақ", callback_data: "cmd_weight_prompt" },
+      ],
+      [
+        { text: "🔔 Ескертулер", callback_data: "cmd_reminders" },
+        { text: "❓ Көмек", callback_data: "cmd_help" },
+      ],
+      [
+        { text: "🌐 AIZHAN ашу", web_app: { url: WEBAPP_URL } },
+      ],
+    ],
+  };
+}
+
+function checkinKeyboard() {
+  return {
+    inline_keyboard: [
+      [{ text: "💪 Жаттығу + 💧 Су + 🍽️ Тамақ + 🌙 Ұйқы", callback_data: "checkin_all" }],
+      [
+        { text: "💪 Жаттығу", callback_data: "checkin_workout" },
+        { text: "💧 Су", callback_data: "checkin_water" },
+      ],
+      [
+        { text: "🍽️ Тамақ", callback_data: "checkin_meals" },
+        { text: "🌙 Ұйқы", callback_data: "checkin_sleep" },
+      ],
+      [{ text: "📤 Жіберу", callback_data: "checkin_submit" }],
+      [{ text: "◀️ Артқа", callback_data: "cmd_main" }],
+    ],
+  };
+}
+
+function goalKeyboard() {
+  return {
+    inline_keyboard: [
+      [{ text: "🔥 Арықтау", callback_data: "goal_lose_weight" }],
+      [{ text: "💪 Салмақ қосу", callback_data: "goal_gain_weight" }],
+      [{ text: "⚖️ Форма сақтау", callback_data: "goal_maintain" }],
+      [{ text: "◀️ Артқа", callback_data: "cmd_main" }],
+    ],
+  };
 }
 
 function createAdminClient() {
@@ -151,8 +209,8 @@ async function getLinkedGoal(supabase: ReturnType<typeof createAdminClient>, cha
 }
 
 async function getProfileName(supabase: ReturnType<typeof createAdminClient>, userId: string) {
-  const { data } = await supabase.from("profiles").select("full_name").eq("user_id", userId).maybeSingle();
-  return data?.full_name || "AIZHAN қолданушысы";
+  const { data } = await supabase.from("profiles").select("full_name, display_name").eq("user_id", userId).maybeSingle();
+  return data?.full_name || data?.display_name || "Пайдаланушы";
 }
 
 async function linkByCode(supabase: ReturnType<typeof createAdminClient>, chat: TelegramMessage["chat"], code: string) {
@@ -180,20 +238,250 @@ async function linkByCode(supabase: ReturnType<typeof createAdminClient>, chat: 
   return updated as GoalRow | null;
 }
 
+function welcomeText(name: string) {
+  return [
+    `🎉 <b>Қош келдіңіз, ${name}!</b>`,
+    "",
+    "AIZHAN Lifestyle бот — сіздің жеке AI фитнес ассистентіңіз.",
+    "",
+    "🔹 Калория, ақуыз, май, көмірсу нормаларыңыз",
+    "🔹 7 күндік жаттығу бағдарламасы",
+    "🔹 Салмақ бақылау",
+    "🔹 Күнделікті check-in",
+    "🔹 Автоматты ескертулер",
+    "",
+    "Төменгі батырмаларды пайдаланыңыз 👇",
+  ].join("\n");
+}
+
 function planText(goal: GoalRow, name: string) {
   const plan = calculatePlan(goal);
-  const workout = plan.workouts[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const workout = plan.workouts[todayIndex];
+  const emoji = dayEmojis[workout.day] || "💪";
+
   return [
-    `Сәлем, <b>${name}</b>.`,
-    `Мақсат: <b>${goalLabels[goal.goal_type]}</b>`,
-    `Калория: <b>${plan.calories} ккал</b>`,
-    `Ақуыз: <b>${plan.proteinG} г</b>, май: <b>${plan.fatG} г</b>, көмірсу: <b>${plan.carbsG} г</b>`,
-    `Су нормасы: <b>${plan.waterLiters} л</b>`,
-    `Бүгінгі жаттығу: <b>${workout.focus}</b>`,
-    workout.details,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `📋 <b>${name} — Жеке жоспар</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
     "",
-    "Командалар: /norms, /weight 70, /goal maintain, /checkin workout water meals sleep, /reminders",
+    `${goalEmojis[goal.goal_type] || "🎯"} Мақсат: <b>${goalLabels[goal.goal_type]}</b>`,
+    "",
+    `🔥 Калория: <b>${plan.calories} ккал</b>`,
+    `🥩 Ақуыз: <b>${plan.proteinG} г</b>`,
+    `🫒 Май: <b>${plan.fatG} г</b>`,
+    `🍚 Көмірсу: <b>${plan.carbsG} г</b>`,
+    `💧 Су: <b>${plan.waterLiters} л</b>`,
+    "",
+    `━━━ ${emoji} Бүгін: <b>${workout.day}</b> ━━━`,
+    `🏋️ <b>${workout.focus}</b>`,
+    `📝 ${workout.details}`,
+    "",
+    `━━━━━━━━━━━━━━━━━━━━`,
   ].join("\n");
+}
+
+function normsText(goal: GoalRow) {
+  const plan = calculatePlan(goal);
+  const total = plan.proteinG * 4 + plan.fatG * 9 + plan.carbsG * 4;
+  const proteinPct = Math.round((plan.proteinG * 4 / total) * 100);
+  const fatPct = Math.round((plan.fatG * 9 / total) * 100);
+  const carbsPct = Math.round((plan.carbsG * 4 / total) * 100);
+
+  return [
+    `📊 <b>Тәуліктік нормалар</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    "",
+    `🔥 Калория: <b>${plan.calories} ккал</b>`,
+    "",
+    `🥩 Ақуыз: <b>${plan.proteinG} г</b> (${proteinPct}%)`,
+    `   ${progressBar(proteinPct, 100)}`,
+    "",
+    `🫒 Май: <b>${plan.fatG} г</b> (${fatPct}%)`,
+    `   ${progressBar(fatPct, 100)}`,
+    "",
+    `🍚 Көмірсу: <b>${plan.carbsG} г</b> (${carbsPct}%)`,
+    `   ${progressBar(carbsPct, 100)}`,
+    "",
+    `💧 Су нормасы: <b>${plan.waterLiters} л</b>`,
+    "",
+    `━━━━━━━━━━━━━━━━━━━━`,
+  ].join("\n");
+}
+
+function weeklyPlanText(goal: GoalRow) {
+  const plan = calculatePlan(goal);
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+
+  const lines = [
+    `🗓 <b>7 күндік жаттығу бағдарламасы</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    "",
+  ];
+
+  plan.workouts.forEach((w, i) => {
+    const isToday = i === todayIndex;
+    const emoji = dayEmojis[w.day] || "📅";
+    const marker = isToday ? " 👈 <b>БҮГІН</b>" : "";
+    lines.push(`${emoji} <b>${w.day}</b>: ${w.focus}${marker}`);
+    lines.push(`   └ ${w.details}`);
+    lines.push("");
+  });
+
+  lines.push("━━━━━━━━━━━━━━━━━━━━");
+  return lines.join("\n");
+}
+
+function helpText() {
+  return [
+    `❓ <b>AIZHAN Lifestyle Bot — Көмек</b>`,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    "",
+    `📋 /plan — Бүгінгі толық жоспар`,
+    `📊 /norms — Калория мен макро нормалар`,
+    `🗓 /week — Апталық жаттығу бағдарламасы`,
+    `⚖️ /weight 70 — Салмақ жазу`,
+    `🎯 /goal — Мақсат ауыстыру`,
+    `✅ /checkin — Күнделікті check-in`,
+    `🔔 /reminders — Ескертулер тізімі`,
+    `🌐 /app — AIZHAN ашу`,
+    "",
+    "Немесе төмендегі батырмаларды пайдаланыңыз 👇",
+    `━━━━━━━━━━━━━━━━━━━━`,
+  ].join("\n");
+}
+
+// Temporary in-memory checkin state for callback flow
+const pendingCheckins = new Map<number, Set<string>>();
+
+async function handleCallbackQuery(callbackQuery: { id: string; from: { id: number }; message?: { chat: { id: number }; message_id: number }; data?: string }) {
+  const supabase = createAdminClient();
+  const chatId = callbackQuery.message?.chat?.id || callbackQuery.from.id;
+  const data = callbackQuery.data || "";
+  const messageId = callbackQuery.message?.message_id;
+
+  // Answer callback to remove loading state
+  const headers = getGatewayHeaders();
+  await fetch(`${GATEWAY_URL}/answerCallbackQuery`, {
+    method: "POST", headers,
+    body: JSON.stringify({ callback_query_id: callbackQuery.id }),
+  });
+
+  const goal = await getLinkedGoal(supabase, chatId);
+
+  if (!goal) {
+    await sendTelegram(chatId, "❌ Сіз әлі тіркелмегенсіз. Сайттан Telegram байланыстыру кодын алыңыз.");
+    return;
+  }
+
+  const name = await getProfileName(supabase, goal.user_id);
+
+  if (data === "cmd_main") {
+    await sendTelegram(chatId, welcomeText(name), { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_plan") {
+    await sendTelegram(chatId, planText(goal, name), { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_norms") {
+    await sendTelegram(chatId, normsText(goal), { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_week") {
+    await sendTelegram(chatId, weeklyPlanText(goal), { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_help") {
+    await sendTelegram(chatId, helpText(), { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_reminders") {
+    const { data: reminders } = await supabase
+      .from("lifestyle_reminders")
+      .select("reminder_type, scheduled_time, channel, is_enabled")
+      .eq("user_id", goal.user_id)
+      .eq("is_enabled", true)
+      .order("scheduled_time", { ascending: true });
+
+    const reminderEmojis: Record<string, string> = { meal: "🍽️", water: "💧", workout: "💪", sleep: "🌙" };
+    const lines = (reminders || []).map((item) => `${reminderEmojis[item.reminder_type] || "🔔"} ${item.scheduled_time} — ${item.reminder_type}`);
+    const text = lines.length
+      ? `🔔 <b>Белсенді ескертулер</b>\n━━━━━━━━━━━━━━━━━━━━\n\n${lines.join("\n")}\n\n━━━━━━━━━━━━━━━━━━━━`
+      : "🔕 Белсенді ескерту жоқ.\n\nСайттағы Ескерту бөлімінен қосыңыз.";
+    await sendTelegram(chatId, text, { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_checkin_menu") {
+    pendingCheckins.set(chatId, new Set());
+    await sendTelegram(chatId, "✅ <b>Check-in</b>\n\nОрындаған тапсырмаларды таңдаңыз:", { reply_markup: checkinKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_weight_prompt") {
+    await sendTelegram(chatId, "⚖️ Бүгінгі салмағыңызды жазыңыз:\n\nМысалы: <code>/weight 70</code>", { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (data === "cmd_goal") {
+    await sendTelegram(chatId, "🎯 <b>Мақсатты таңдаңыз:</b>", { reply_markup: goalKeyboard() });
+    return;
+  }
+
+  // Checkin toggles
+  if (data.startsWith("checkin_")) {
+    const action = data.replace("checkin_", "");
+    const current = pendingCheckins.get(chatId) || new Set();
+
+    if (action === "all") {
+      ["workout", "water", "meals", "sleep"].forEach(k => current.add(k));
+    } else if (action === "submit") {
+      const tokens = current;
+      await supabase.from("daily_checkins").upsert({
+        user_id: goal.user_id, goal_id: goal.id, completed_at: todayStr(),
+        workout_done: tokens.has("workout"), water_done: tokens.has("water"),
+        meals_done: tokens.has("meals"), sleep_done: tokens.has("sleep"),
+        mood_score: tokens.size,
+        ai_feedback: tokens.size >= 3 ? "🔥 Керемет! Осы қарқынды сақтаңыз!" : "💫 Бір қадам да прогресс!",
+      }, { onConflict: "user_id,completed_at" });
+
+      const bar = progressBar(tokens.size, 4, 4);
+      pendingCheckins.delete(chatId);
+      await sendTelegram(chatId, `✅ <b>Check-in сақталды!</b>\n\nПрогресс: ${bar} ${tokens.size}/4\n${tokens.size >= 3 ? "🔥 Жарайсыз! Осы қарқынды сақтаңыз!" : "💫 Ертең жалғастырыңыз!"}`, { reply_markup: mainKeyboard() });
+      return;
+    } else if (["workout", "water", "meals", "sleep"].includes(action)) {
+      if (current.has(action)) current.delete(action); else current.add(action);
+    }
+
+    pendingCheckins.set(chatId, current);
+    const statusEmojis: Record<string, string> = { workout: "💪", water: "💧", meals: "🍽️", sleep: "🌙" };
+    const statusText = ["workout", "water", "meals", "sleep"]
+      .map(k => `${current.has(k) ? "✅" : "⬜"} ${statusEmojis[k]} ${k}`)
+      .join("\n");
+    await sendTelegram(chatId, `✅ <b>Check-in</b>\n\n${statusText}\n\nТаңдап болған соң "📤 Жіберу" басыңыз.`, { reply_markup: checkinKeyboard() });
+    return;
+  }
+
+  // Goal change
+  if (data.startsWith("goal_")) {
+    const goalType = data.replace("goal_", "");
+    if (!["lose_weight", "gain_weight", "maintain"].includes(goalType)) return;
+    const nextGoal = { ...goal, goal_type: goalType as GoalRow["goal_type"] };
+    const plan = calculatePlan(nextGoal);
+    await supabase.from("user_goals").update({
+      goal_type: goalType, target_calories: plan.calories,
+      target_protein_g: plan.proteinG, target_fat_g: plan.fatG,
+      target_carbs_g: plan.carbsG, plan_data: plan,
+    }).eq("id", goal.id);
+    await sendTelegram(chatId, `🎯 Мақсат жаңартылды: <b>${goalLabels[goalType]}</b>\n\n${planText(nextGoal, name)}`, { reply_markup: mainKeyboard() });
+    return;
+  }
 }
 
 async function handleUserMessage(message: TelegramMessage) {
@@ -203,77 +491,119 @@ async function handleUserMessage(message: TelegramMessage) {
   if (command === "/start") {
     const linked = await linkByCode(supabase, message.chat, value);
     if (!linked) {
-      await sendTelegram(message.chat.id, "AIZHAN Lifestyle ботына қош келдіңіз.\n\nСайттағы Lifestyle -> Ескерту бөліміне кіріп, Telegram байланыстыру ID көшіріңіз де, осы жерге жіберіңіз немесе /start ID түрінде бастаңыз.");
+      await sendTelegram(message.chat.id, [
+        "🤖 <b>AIZHAN Lifestyle Bot</b>",
+        "",
+        "Қош келдіңіз! Бастау үшін:",
+        "",
+        "1️⃣ AIZHAN сайтына кіріңіз",
+        "2️⃣ Lifestyle → Ескерту бөліміне өтіңіз",
+        "3️⃣ Telegram қосу батырмасын басыңыз",
+        "4️⃣ Кодты осы ботқа жіберіңіз",
+        "",
+        "Немесе <code>/start КОД</code> форматында жазыңыз.",
+      ].join("\n"));
       return;
     }
     const name = await getProfileName(supabase, linked.user_id);
-    await sendTelegram(message.chat.id, `Авторизация сәтті өтті.\nПрофиль: <b>${name}</b>\n\n${planText(linked, name)}`);
+    await sendTelegram(message.chat.id, `✅ <b>Авторизация сәтті!</b>\n\n${welcomeText(name)}`, { reply_markup: mainKeyboard() });
     return;
   }
 
-  if (/^[A-Z0-9]{4,8}$/i.test((message.text || "").trim()) || /^[0-9a-f-]{20,}$/i.test((message.text || "").trim())) {
+  // Link code detection
+  if (/^[A-Z0-9]{4,8}$/i.test((message.text || "").trim())) {
     const linked = await linkByCode(supabase, message.chat, (message.text || "").trim());
     if (linked) {
       const name = await getProfileName(supabase, linked.user_id);
-      await sendTelegram(message.chat.id, `ID қабылданды. Профиль: <b>${name}</b>\n\n${planText(linked, name)}`);
+      await sendTelegram(message.chat.id, `✅ <b>Код қабылданды!</b>\n\n${welcomeText(name)}`, { reply_markup: mainKeyboard() });
       return;
     }
   }
 
   const goal = await getLinkedGoal(supabase, message.chat.id);
   if (!goal) {
-    await sendTelegram(message.chat.id, "Сіз әлі авторизацияланбағансыз. Сайттағы Telegram байланыстыру ID жіберіңіз.");
+    await sendTelegram(message.chat.id, "❌ Сіз әлі тіркелмегенсіз.\n\nСайттағы Lifestyle → Ескерту бөлімінен Telegram қосыңыз да, кодты жіберіңіз.");
     return;
   }
 
   const name = await getProfileName(supabase, goal.user_id);
 
   if (command === "/help") {
-    await sendTelegram(message.chat.id, "Командалар:\n/plan - толық жоспар\n/norms - калория мен макро\n/weight 70 - салмақ енгізу\n/goal lose_weight|gain_weight|maintain - мақсат ауыстыру\n/checkin workout water meals sleep - күндік бақылау\n/reminders - ескертулер");
+    await sendTelegram(message.chat.id, helpText(), { reply_markup: mainKeyboard() });
     return;
   }
 
-  if (command === "/plan") { await sendTelegram(message.chat.id, planText(goal, name)); return; }
+  if (command === "/plan") {
+    await sendTelegram(message.chat.id, planText(goal, name), { reply_markup: mainKeyboard() });
+    return;
+  }
+
+  if (command === "/week") {
+    await sendTelegram(message.chat.id, weeklyPlanText(goal), { reply_markup: mainKeyboard() });
+    return;
+  }
 
   if (command === "/norms") {
-    const plan = calculatePlan(goal);
-    await sendTelegram(message.chat.id, `Нормалар:\nКалория: ${plan.calories} ккал\nАқуыз: ${plan.proteinG} г\nМай: ${plan.fatG} г\nКөмірсу: ${plan.carbsG} г\nСу: ${plan.waterLiters} л`);
+    await sendTelegram(message.chat.id, normsText(goal), { reply_markup: mainKeyboard() });
     return;
   }
 
   if (command === "/weight") {
     const weight = Number(value.replace(",", "."));
     if (!Number.isFinite(weight) || weight < 25 || weight > 350) {
-      await sendTelegram(message.chat.id, "Салмақты былай енгізіңіз: /weight 70");
+      await sendTelegram(message.chat.id, "⚖️ Салмақты былай жазыңыз:\n\n<code>/weight 70</code>");
       return;
     }
     await supabase.from("weight_history").insert({ user_id: goal.user_id, goal_id: goal.id, weight_kg: weight, recorded_at: todayStr() });
-    await sendTelegram(message.chat.id, `Салмақ жазылды: <b>${weight} кг</b>.`);
+
+    // Get last weight for comparison
+    const { data: lastWeights } = await supabase.from("weight_history").select("weight_kg").eq("user_id", goal.user_id).order("recorded_at", { ascending: false }).limit(2);
+    let delta = "";
+    if (lastWeights && lastWeights.length >= 2) {
+      const diff = Number((weight - Number(lastWeights[1].weight_kg)).toFixed(1));
+      delta = diff > 0 ? `\n📈 Өзгеріс: +${diff} кг` : diff < 0 ? `\n📉 Өзгеріс: ${diff} кг` : "\n➡️ Өзгеріс жоқ";
+    }
+    await sendTelegram(message.chat.id, `✅ <b>Салмақ жазылды: ${weight} кг</b>${delta}`, { reply_markup: mainKeyboard() });
     return;
   }
 
   if (command === "/goal") {
+    if (!value) {
+      await sendTelegram(message.chat.id, "🎯 <b>Мақсатты таңдаңыз:</b>", { reply_markup: goalKeyboard() });
+      return;
+    }
     if (!["lose_weight", "gain_weight", "maintain"].includes(value)) {
-      await sendTelegram(message.chat.id, "Мақсатты былай ауыстырыңыз: /goal lose_weight немесе /goal gain_weight немесе /goal maintain");
+      await sendTelegram(message.chat.id, "🎯 <b>Мақсатты таңдаңыз:</b>", { reply_markup: goalKeyboard() });
       return;
     }
     const nextGoal = { ...goal, goal_type: value as GoalRow["goal_type"] };
     const plan = calculatePlan(nextGoal);
-    await supabase.from("user_goals").update({ goal_type: value, target_calories: plan.calories, target_protein_g: plan.proteinG, target_fat_g: plan.fatG, target_carbs_g: plan.carbsG, plan_data: plan }).eq("id", goal.id);
-    await sendTelegram(message.chat.id, `Мақсат жаңартылды: <b>${goalLabels[value]}</b>.\n${planText(nextGoal, name)}`);
+    await supabase.from("user_goals").update({
+      goal_type: value, target_calories: plan.calories,
+      target_protein_g: plan.proteinG, target_fat_g: plan.fatG,
+      target_carbs_g: plan.carbsG, plan_data: plan,
+    }).eq("id", goal.id);
+    await sendTelegram(message.chat.id, `🎯 Мақсат жаңартылды: <b>${goalLabels[value]}</b>\n\n${planText(nextGoal, name)}`, { reply_markup: mainKeyboard() });
     return;
   }
 
   if (command === "/checkin") {
-    const tokens = value.toLowerCase().split(/\s+/);
+    const tokens = value.toLowerCase().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) {
+      // Show interactive checkin menu
+      pendingCheckins.set(message.chat.id, new Set());
+      await sendTelegram(message.chat.id, "✅ <b>Check-in</b>\n\nОрындаған тапсырмаларды таңдаңыз:", { reply_markup: checkinKeyboard() });
+      return;
+    }
     await supabase.from("daily_checkins").upsert({
       user_id: goal.user_id, goal_id: goal.id, completed_at: todayStr(),
       workout_done: tokens.includes("workout"), water_done: tokens.includes("water"),
       meals_done: tokens.includes("meals"), sleep_done: tokens.includes("sleep"),
-      mood_score: tokens.filter(Boolean).length,
-      ai_feedback: tokens.length >= 3 ? "Керемет тәртіп. Осы қарқынды сақтаңыз." : "Бір қадам да прогресс. Ертең қайта жалғастырыңыз.",
+      mood_score: tokens.length,
+      ai_feedback: tokens.length >= 3 ? "🔥 Керемет! Осы қарқынды сақтаңыз!" : "💫 Бір қадам да прогресс!",
     }, { onConflict: "user_id,completed_at" });
-    await sendTelegram(message.chat.id, "Check-in сақталды.");
+    const bar = progressBar(tokens.length, 4, 4);
+    await sendTelegram(message.chat.id, `✅ <b>Check-in сақталды!</b>\n\nПрогресс: ${bar} ${tokens.length}/4`, { reply_markup: mainKeyboard() });
     return;
   }
 
@@ -284,12 +614,29 @@ async function handleUserMessage(message: TelegramMessage) {
       .eq("user_id", goal.user_id)
       .eq("is_enabled", true)
       .order("scheduled_time", { ascending: true });
-    const lines = (data || []).map((item) => `${item.scheduled_time} - ${item.reminder_type} (${item.channel})`);
-    await sendTelegram(message.chat.id, lines.length ? `Ескертулер:\n${lines.join("\n")}` : "Әзірге белсенді ескерту жоқ. Сайттағы Ескерту бөлімінен қосыңыз.");
+    const reminderEmojis: Record<string, string> = { meal: "🍽️", water: "💧", workout: "💪", sleep: "🌙" };
+    const lines = (data || []).map((item) => `${reminderEmojis[item.reminder_type] || "🔔"} ${item.scheduled_time} — ${item.reminder_type}`);
+    const text = lines.length
+      ? `🔔 <b>Белсенді ескертулер</b>\n━━━━━━━━━━━━━━━━━━━━\n\n${lines.join("\n")}\n\n━━━━━━━━━━━━━━━━━━━━`
+      : "🔕 Белсенді ескерту жоқ.\n\nСайттағы Ескерту бөлімінен қосыңыз.";
+    await sendTelegram(message.chat.id, text, { reply_markup: mainKeyboard() });
     return;
   }
 
-  await sendTelegram(message.chat.id, "Команда түсініксіз. /help деп жазыңыз.");
+  if (command === "/app") {
+    await sendTelegram(message.chat.id, "🌐 <b>AIZHAN ашу</b>\n\nТөмендегі батырманы басыңыз:", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🌐 AIZHAN ашу", web_app: { url: WEBAPP_URL } }],
+          [{ text: "◀️ Артқа", callback_data: "cmd_main" }],
+        ],
+      },
+    });
+    return;
+  }
+
+  // Unknown text — show menu
+  await sendTelegram(message.chat.id, `🤔 Командаңыз түсініксіз.\n\nТөмендегі батырмаларды пайдаланыңыз 👇`, { reply_markup: mainKeyboard() });
 }
 
 async function sendDueNotifications() {
@@ -302,7 +649,6 @@ async function sendDueNotifications() {
     .limit(50);
 
   let sent = 0;
-
   for (const notification of notifications || []) {
     const { data: goal } = await supabase
       .from("user_goals")
@@ -316,14 +662,13 @@ async function sendDueNotifications() {
     if (!goal?.telegram_chat_id) continue;
 
     try {
-      await sendTelegram(goal.telegram_chat_id, `<b>${notification.title}</b>\n${notification.body}`);
+      await sendTelegram(goal.telegram_chat_id, `🔔 <b>${notification.title}</b>\n\n${notification.body}`);
       await supabase.from("notifications").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", notification.id);
       sent += 1;
     } catch (error) {
       await supabase.from("notifications").update({ status: "failed", metadata: { error: error instanceof Error ? error.message : "Unknown error" } }).eq("id", notification.id);
     }
   }
-
   return sent;
 }
 
@@ -333,7 +678,6 @@ async function pollUpdates() {
   const MIN_REMAINING_MS = 5_000;
   const startTime = Date.now();
 
-  // Get or create bot state
   const { data: state } = await supabase
     .from("telegram_bot_state")
     .select("update_offset")
@@ -355,7 +699,7 @@ async function pollUpdates() {
     const response = await fetch(`${GATEWAY_URL}/getUpdates`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ offset: currentOffset, timeout, allowed_updates: ["message"] }),
+      body: JSON.stringify({ offset: currentOffset, timeout, allowed_updates: ["message", "callback_query"] }),
     });
 
     const data = await response.json();
@@ -364,27 +708,28 @@ async function pollUpdates() {
       break;
     }
 
-    const updates: TelegramUpdate[] = data.result ?? [];
+    const updates = data.result ?? [];
     if (updates.length === 0) continue;
 
     for (const update of updates) {
-      if (update.message) {
-        try {
+      try {
+        if (update.callback_query) {
+          await handleCallbackQuery(update.callback_query);
+        } else if (update.message) {
           await handleUserMessage(update.message);
-        } catch (err) {
-          console.error("Error handling message:", err);
         }
+      } catch (err) {
+        console.error("Error handling update:", err);
       }
     }
 
-    const newOffset = Math.max(...updates.map((u) => u.update_id)) + 1;
+    const newOffset = Math.max(...updates.map((u: TelegramUpdate & { callback_query?: unknown }) => u.update_id)) + 1;
     await supabase
       .from("telegram_bot_state")
       .upsert({ id: 1, update_offset: newOffset, updated_at: new Date().toISOString() }, { onConflict: "id" });
     currentOffset = newOffset;
     totalProcessed += updates.length;
   }
-
   return totalProcessed;
 }
 
@@ -404,9 +749,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, processed }), { headers: jsonHeaders });
     }
 
-    // Legacy webhook mode
-    const update = body as TelegramUpdate;
-    if (update.message) await handleUserMessage(update.message);
+    // Webhook mode — handle both messages and callback queries
+    if (body.callback_query) {
+      await handleCallbackQuery(body.callback_query);
+    } else if (body.message) {
+      await handleUserMessage(body.message);
+    }
 
     return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
   } catch (error) {
