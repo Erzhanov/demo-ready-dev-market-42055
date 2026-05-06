@@ -109,7 +109,7 @@ const LifestylePage = () => {
   const [recentWeights, setRecentWeights] = useState<Array<{ id: string; weight_kg: number; recorded_at: string }>>([]);
   const [recentCheckIns, setRecentCheckIns] = useState<Array<{ id: string; completed_at: string; workout_done: boolean; water_done: boolean; meals_done: boolean; sleep_done: boolean }>>([]);
 
-  const botUrl = import.meta.env.VITE_TELEGRAM_BOT_URL || "https://t.me/AIZHAN_lifestyle_bot";
+  const botUrl = import.meta.env.VITE_TELEGRAM_BOT_URL || "https://t.me/@bot_aizhan_bot";
 
   const numericProfile = useMemo(() => ({
     gender, age: Number(age) || 25, heightCm: Number(heightCm) || 165, weightKg: Number(weightKg) || 60,
