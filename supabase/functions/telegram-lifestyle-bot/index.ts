@@ -172,7 +172,7 @@ async function linkByCode(supabase: ReturnType<typeof createAdminClient>, chat: 
   const channels = { ...((goal.notification_channels || {}) as Record<string, boolean>), telegram: true };
   const { data: updated } = await supabase
     .from("user_goals")
-    .update({ telegram_chat_id: String(chat.id), notification_channels: channels })
+    .update({ telegram_chat_id: String(chat.id), notification_channels: channels, telegram_link_code: null })
     .eq("id", goal.id)
     .select("*")
     .single();
