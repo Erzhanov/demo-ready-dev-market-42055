@@ -211,7 +211,7 @@ async function handleUserMessage(message: TelegramMessage) {
     return;
   }
 
-  if (/^[0-9a-f-]{20,}$/i.test((message.text || "").trim())) {
+  if (/^[A-Z0-9]{4,8}$/i.test((message.text || "").trim()) || /^[0-9a-f-]{20,}$/i.test((message.text || "").trim())) {
     const linked = await linkByCode(supabase, message.chat, (message.text || "").trim());
     if (linked) {
       const name = await getProfileName(supabase, linked.user_id);
