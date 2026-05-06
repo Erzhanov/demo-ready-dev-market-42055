@@ -229,10 +229,29 @@ const LifestylePage = () => {
     if (p === "granted") { setReminderChannels((c) => ({ ...c, browser: true })); new Notification("AIZHAN", { body: "Браузер ескертулері қосылды ✅" }); }
   };
 
+  const generateLinkCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  };
+
+  const handleTelegramToggle = async (enabled: boolean) => {
+    setReminderChannels((c) => ({ ...c, telegram: enabled }));
+    if (enabled && !telegramChatId && user) {
+      const code = generateLinkCode();
+      setTelegramLinkCode(code);
+      // Save code to DB immediately
+      if (goalId) {
+        await supabase.from("user_goals").update({ telegram_link_code: code } as never).eq("id", goalId);
+      }
+    }
+  };
+
   const copyTelegramLinkCode = async () => {
-    if (!telegramLinkCode) { toast({ title: "Алдымен жоспарды сақтаңыз" }); return; }
+    if (!telegramLinkCode) { toast({ title: "Код жоқ" }); return; }
     await navigator.clipboard.writeText(telegramLinkCode);
-    toast({ title: "📋 Көшірілді" });
+    toast({ title: "📋 Код көшірілді" });
   };
 
   // Pro gate — non-Pro users see a promo screen
@@ -617,17 +636,27 @@ const LifestylePage = () => {
               <div className="mt-4 space-y-3">
                 <ToggleRow label="📱 Сайт ішіндегі хабарламалар" checked={reminderChannels.in_app} onChange={(v) => setReminderChannels((c) => ({ ...c, in_app: v }))} />
                 <ToggleRow label="🔔 Браузерлік push" checked={reminderChannels.browser} onChange={(v) => v ? requestBrowserNotifications() : setReminderChannels((c) => ({ ...c, browser: false }))} />
-                <ToggleRow label="✈️ Telegram бот" checked={reminderChannels.telegram} onChange={(v) => setReminderChannels((c) => ({ ...c, telegram: v }))} />
+                <ToggleRow label="✈️ Telegram бот" checked={reminderChannels.telegram} onChange={(v) => handleTelegramToggle(v)} />
                 {reminderChannels.telegram && (
                   <div className="rounded-2xl border border-border/60 p-4 space-y-3">
-                    <div className="flex gap-2">
-                      <Input value={telegramLinkCode || "Жоспарды сақтаңыз"} readOnly className="h-10 rounded-xl bg-secondary/50 text-xs" />
-                      <Button variant="outline" onClick={copyTelegramLinkCode} size="sm" className="h-10 rounded-xl"><Copy className="h-4 w-4" /></Button>
-                      <Button variant="outline" asChild size="sm" className="h-10 rounded-xl">
-                        <a href={`${botUrl}?start=${telegramLinkCode || ""}`} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
-                      </Button>
-                    </div>
-                    <Input value={telegramChatId} onChange={(e) => setTelegramChatId(e.target.value)} className="h-10 rounded-xl" placeholder="Telegram chat ID" />
+                    {telegramChatId ? (
+                      <div className="flex items-center gap-2 text-sm text-green-500 font-medium">
+                        <span>✅</span> Telegram қосылған (ID: {telegramChatId})
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted-foreground">Бұл кодты Telegram ботқа жіберіңіз. Код бір рет қолданылады.</p>
+                        <div className="flex gap-2 items-center">
+                          <Input value={telegramLinkCode || "Код жасалуда..."} readOnly className="h-10 rounded-xl bg-secondary/50 text-sm font-mono tracking-widest text-center" />
+                          <Button variant="outline" onClick={copyTelegramLinkCode} size="sm" className="h-10 rounded-xl"><Copy className="h-4 w-4" /></Button>
+                        </div>
+                        <Button variant="outline" asChild size="sm" className="h-10 w-full rounded-xl">
+                          <a href={`${botUrl}?start=${telegramLinkCode || ""}`} target="_blank" rel="noreferrer" className="flex items-center gap-2">
+                            <ExternalLink className="h-4 w-4" /> Ботқа өту
+                          </a>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

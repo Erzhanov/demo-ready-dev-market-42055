@@ -172,7 +172,7 @@ async function linkByCode(supabase: ReturnType<typeof createAdminClient>, chat: 
   const channels = { ...((goal.notification_channels || {}) as Record<string, boolean>), telegram: true };
   const { data: updated } = await supabase
     .from("user_goals")
-    .update({ telegram_chat_id: String(chat.id), notification_channels: channels })
+    .update({ telegram_chat_id: String(chat.id), notification_channels: channels, telegram_link_code: null })
     .eq("id", goal.id)
     .select("*")
     .single();
@@ -211,7 +211,7 @@ async function handleUserMessage(message: TelegramMessage) {
     return;
   }
 
-  if (/^[0-9a-f-]{20,}$/i.test((message.text || "").trim())) {
+  if (/^[A-Z0-9]{4,8}$/i.test((message.text || "").trim()) || /^[0-9a-f-]{20,}$/i.test((message.text || "").trim())) {
     const linked = await linkByCode(supabase, message.chat, (message.text || "").trim());
     if (linked) {
       const name = await getProfileName(supabase, linked.user_id);
