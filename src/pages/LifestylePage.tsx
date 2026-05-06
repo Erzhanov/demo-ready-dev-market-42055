@@ -798,5 +798,14 @@ const ToggleRow = ({ label, checked, onChange }: { label: string; checked: boole
   </div>
 );
 
+const StepItem = ({ number, title, active }: { number: number; title: string; active?: boolean }) => (
+  <div className="flex items-center gap-3">
+    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+      {number}
+    </div>
+    <span className={`text-sm font-medium ${active ? "text-foreground" : "text-muted-foreground"}`}>{title}</span>
+  </div>
+);
+
 
 export default LifestylePage;
