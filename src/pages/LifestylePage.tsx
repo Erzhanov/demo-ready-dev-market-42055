@@ -229,10 +229,29 @@ const LifestylePage = () => {
     if (p === "granted") { setReminderChannels((c) => ({ ...c, browser: true })); new Notification("AIZHAN", { body: "Браузер ескертулері қосылды ✅" }); }
   };
 
+  const generateLinkCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  };
+
+  const handleTelegramToggle = async (enabled: boolean) => {
+    setReminderChannels((c) => ({ ...c, telegram: enabled }));
+    if (enabled && !telegramChatId && user) {
+      const code = generateLinkCode();
+      setTelegramLinkCode(code);
+      // Save code to DB immediately
+      if (goalId) {
+        await supabase.from("user_goals").update({ telegram_link_code: code } as never).eq("id", goalId);
+      }
+    }
+  };
+
   const copyTelegramLinkCode = async () => {
-    if (!telegramLinkCode) { toast({ title: "Алдымен жоспарды сақтаңыз" }); return; }
+    if (!telegramLinkCode) { toast({ title: "Код жоқ" }); return; }
     await navigator.clipboard.writeText(telegramLinkCode);
-    toast({ title: "📋 Көшірілді" });
+    toast({ title: "📋 Код көшірілді" });
   };
 
   // Pro gate — non-Pro users see a promo screen
