@@ -423,9 +423,12 @@ const ChatPage = () => {
             <Button variant="outline" onClick={() => setProDialogOpen(false)} className="rounded-2xl">
               Кейін
             </Button>
-            <Button onClick={() => window.location.assign("/pro")} className="rounded-2xl gradient-medical text-primary-foreground">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Pro-ға өту
+            <Button onClick={() => {
+              const msg = encodeURIComponent("Сәлем! Мен сайттан келдім маған PRO версиясы керек.");
+              window.open(`https://wa.me/77057812935?text=${msg}`, "_blank");
+            }} className="rounded-2xl bg-[#25D366] hover:bg-[#1fb855] text-white">
+              <Send className="mr-2 h-4 w-4" />
+              WhatsApp арқылы Pro алу
             </Button>
           </DialogFooter>
         </DialogContent>
