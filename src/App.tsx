@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { TermsModal } from "@/components/TermsModal";
@@ -85,27 +86,29 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-              <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-              <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-              <Route path="/medicine" element={<ProtectedRoute><MedicinePage /></ProtectedRoute>} />
-              <Route path="/lifestyle" element={<ProtectedRoute><LifestylePage /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-              <Route path="/pro" element={<ProtectedRoute><ProPage /></ProtectedRoute>} />
-              <Route path="/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-              <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-              <Route path="/admin/stripe-debug" element={<AdminRoute><StripeDebugPage /></AdminRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+                <Route path="/medicine" element={<ProtectedRoute><MedicinePage /></ProtectedRoute>} />
+                <Route path="/lifestyle" element={<ProtectedRoute><LifestylePage /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                <Route path="/pro" element={<ProtectedRoute><ProPage /></ProtectedRoute>} />
+                <Route path="/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                <Route path="/admin/stripe-debug" element={<AdminRoute><StripeDebugPage /></AdminRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </LanguageProvider>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
