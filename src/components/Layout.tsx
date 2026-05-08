@@ -1,24 +1,25 @@
-﻿import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { BarChart3, Crown, HeartPulse, History, LogOut, Menu, MessageCircle, MessageSquare, Search, Stethoscope, User, X } from "lucide-react";
+import { BarChart3, Crown, Globe, HeartPulse, History, LogOut, Menu, MessageCircle, MessageSquare, Search, Stethoscope, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { useProStatus } from "@/hooks/use-pro-status";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const getNavItems = (isPro: boolean) => [
-  { path: "/chat", label: "Көмек", icon: MessageSquare },
-  { path: "/history", label: "Тарих", icon: History },
-  { path: "/medicine", label: "Дәрі", icon: Search },
-  { path: "/lifestyle", label: "Lifestyle", icon: HeartPulse },
-  { path: "/reviews", label: "Пікір", icon: MessageCircle },
-  { path: "/profile", label: "Профиль", icon: User },
-  ...(!isPro ? [{ path: "/pro", label: "Pro", icon: Crown }] : []),
+const getNavItems = (isPro: boolean, t: (k: string) => string) => [
+  { path: "/chat", label: t("nav.help"), icon: MessageSquare },
+  { path: "/history", label: t("nav.history"), icon: History },
+  { path: "/medicine", label: t("nav.medicine"), icon: Search },
+  { path: "/lifestyle", label: t("nav.lifestyle"), icon: HeartPulse },
+  { path: "/reviews", label: t("nav.reviews"), icon: MessageCircle },
+  { path: "/profile", label: t("nav.profile"), icon: User },
+  ...(!isPro ? [{ path: "/pro", label: t("nav.pro"), icon: Crown }] : []),
 ];
 
 const Layout = ({ children }: LayoutProps) => {
@@ -28,12 +29,15 @@ const Layout = ({ children }: LayoutProps) => {
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isPro } = useProStatus();
-  const navItems = getNavItems(isPro);
+  const { lang, setLang, t } = useLanguage();
+  const navItems = getNavItems(isPro, t);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
+
+  const toggleLang = () => setLang(lang === "kk" ? "en" : "kk");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -54,7 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
                 )}
               </div>
               <p className="hidden text-[11px] text-muted-foreground sm:block">
-                {isPro ? "Pro медициналық көмекші — лимитсіз" : "Қарапайым медициналық көмекші"}
+                {isPro ? t("nav.subtitle.pro") : t("nav.subtitle.free")}
               </p>
             </div>
           </NavLink>
@@ -84,17 +88,25 @@ const Layout = ({ children }: LayoutProps) => {
                 }`}
               >
                 <BarChart3 className="h-4 w-4" />
-                Админ
+                {t("nav.admin")}
               </NavLink>
             )}
+            <Button variant="ghost" size="sm" onClick={toggleLang} className="h-9 rounded-xl px-2.5 text-xs font-semibold text-muted-foreground hover:bg-secondary">
+              <Globe className="mr-1 h-3.5 w-3.5" />
+              {lang === "kk" ? "EN" : "ҚАЗ"}
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" onClick={handleLogout} className="h-9 rounded-xl px-3 text-sm text-muted-foreground hover:bg-secondary">
               <LogOut className="mr-2 h-4 w-4" />
-              Шығу
+              {t("nav.logout")}
             </Button>
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
+            <Button variant="ghost" size="sm" onClick={toggleLang} className="h-9 rounded-xl px-2 text-xs font-semibold">
+              <Globe className="mr-1 h-3.5 w-3.5" />
+              {lang === "kk" ? "EN" : "ҚАЗ"}
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} className="rounded-xl hover:bg-secondary">
               <Menu className="h-5 w-5" />
@@ -108,7 +120,7 @@ const Layout = ({ children }: LayoutProps) => {
           <button className="absolute inset-0 bg-black/25" onClick={() => setMobileOpen(false)} />
           <div className="absolute right-0 top-0 h-full w-[280px] surface-soft p-4 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm font-semibold">Мәзір</p>
+              <p className="text-sm font-semibold">{t("nav.menu")}</p>
               <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="rounded-xl">
                 <X className="h-5 w-5" />
               </Button>
@@ -134,12 +146,12 @@ const Layout = ({ children }: LayoutProps) => {
               {isAdmin && (
                 <NavLink to="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 rounded-xl bg-secondary/60 px-3 py-3 text-sm text-foreground">
                   <BarChart3 className="h-4 w-4" />
-                  Админ
+                  {t("nav.admin")}
                 </NavLink>
               )}
               <Button variant="outline" onClick={handleLogout} className="mt-3 w-full justify-start rounded-xl text-sm">
                 <LogOut className="mr-2 h-4 w-4" />
-                Шығу
+                {t("nav.logout")}
               </Button>
             </div>
           </div>
@@ -147,7 +159,6 @@ const Layout = ({ children }: LayoutProps) => {
       )}
 
       <main className="mx-auto max-w-6xl px-3 py-3 pb-5 sm:px-6 sm:py-5">{children}</main>
-
     </div>
   );
 };
