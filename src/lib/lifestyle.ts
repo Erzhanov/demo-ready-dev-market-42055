@@ -21,10 +21,21 @@ export interface LifestylePlan {
   carbsG: number;
   waterLiters: number;
   restDays: string[];
+  bmi: number;
+  bmiCategory: "underweight" | "normal" | "overweight" | "obese";
+  bmr: number;
+  tdee: number;
+  targetWeightKg: number;
+  weeklyDeltaKg: number;
+  weeksToGoal: number;
+  projectedGoalDate: string | null;
+  stepGoal: number;
+  sleepHours: number;
   meals: Array<{
     title: string;
     time: string;
     items: string[];
+    calories: number;
   }>;
   workouts: Array<{
     day: string;
@@ -76,13 +87,21 @@ export function parseAllergies(value: string) {
 }
 
 export function calculateLifestylePlan(profile: LifestyleProfileInput): LifestylePlan {
+  const heightM = profile.heightCm / 100;
+  const bmi = Number((profile.weightKg / (heightM * heightM)).toFixed(1));
+  const bmiCategory: LifestylePlan["bmiCategory"] =
+    bmi < 18.5 ? "underweight" : bmi < 25 ? "normal" : bmi < 30 ? "overweight" : "obese";
+
   const baseBmr =
     10 * profile.weightKg +
     6.25 * profile.heightCm -
     5 * profile.age +
     (profile.gender === "male" ? 5 : profile.gender === "female" ? -161 : -78);
+  const bmr = Math.round(baseBmr);
+  const tdee = Math.round(baseBmr * activityMultiplier[profile.activityLevel]);
+
   const pressureAdjustment = profile.bloodPressure === "high" ? -80 : profile.bloodPressure === "low" ? 40 : 0;
-  const calories = Math.max(1250, Math.round(baseBmr * activityMultiplier[profile.activityLevel] + goalDelta[profile.goal] + pressureAdjustment));
+  const calories = Math.max(1250, Math.round(tdee + goalDelta[profile.goal] + pressureAdjustment));
   const proteinMultiplier = profile.goal === "gain_weight" ? 1.9 : profile.goal === "lose_weight" ? 1.7 : 1.5;
   const proteinG = Math.round(profile.weightKg * proteinMultiplier);
   const fatG = Math.round((calories * 0.27) / 9);
@@ -91,15 +110,33 @@ export function calculateLifestylePlan(profile: LifestyleProfileInput): Lifestyl
   const restDays = profile.goal === "gain_weight" ? ["Сәрсенбі", "Жексенбі"] : ["Бейсенбі", "Жексенбі"];
   const pressureSensitive = profile.bloodPressure === "high" || profile.bloodPressure === "low";
 
+  // Target weight = BMI 22 ideal, but clamp based on goal direction
+  const idealKg = Math.round(22 * heightM * heightM);
+  let targetWeightKg = profile.weightKg;
+  if (profile.goal === "lose_weight") targetWeightKg = Math.min(profile.weightKg, Math.max(idealKg, Math.round(profile.weightKg * 0.9)));
+  else if (profile.goal === "gain_weight") targetWeightKg = Math.max(profile.weightKg, Math.min(idealKg, Math.round(profile.weightKg * 1.1)));
+
+  // Healthy weekly delta: 0.5kg loss or 0.3kg gain
+  const weeklyDeltaKg = profile.goal === "lose_weight" ? -0.5 : profile.goal === "gain_weight" ? 0.3 : 0;
+  const diffKg = targetWeightKg - profile.weightKg;
+  const weeksToGoal = weeklyDeltaKg === 0 ? 0 : Math.max(1, Math.ceil(Math.abs(diffKg / weeklyDeltaKg)));
+  const projectedGoalDate = weeksToGoal > 0
+    ? new Date(Date.now() + weeksToGoal * 7 * 86400_000).toISOString().slice(0, 10)
+    : null;
+
+  const stepGoal = profile.goal === "lose_weight" ? 10000 : profile.goal === "gain_weight" ? 6000 : 8000;
+  const sleepHours = profile.age < 18 ? 9 : profile.age > 60 ? 7 : 8;
+
   const mealProtein = profile.goal === "gain_weight" ? "тауық еті, жұмыртқа немесе сүзбе" : "тауық еті, балық немесе бұршақ";
   const carbBase = profile.goal === "lose_weight" ? "қарақұмық, көкөніс және жасыл салат" : "күріш, сұлы, картоп немесе тұтас дәнді нан";
   const allergyText = profile.allergies.length > 0 ? `Аллергияңызды ескеріңіз: ${profile.allergies.join(", ")} қоспаңыз.` : "Аллергия көрсетілмеген, жаңа өнімді аз мөлшерден бастаңыз.";
 
+  // Distribute calories: breakfast 25%, lunch 35%, snack 15%, dinner 25%
   const meals = [
-    { title: "Таңғы ас", time: "08:00", items: ["сұлы ботқасы немесе жұмыртқа", "жеміс", "қантсыз шай немесе су"] },
-    { title: "Түскі ас", time: "13:00", items: [mealProtein, carbBase, "көкөніс"] },
-    { title: "Аралық ас", time: "16:30", items: ["айран, йогурт немесе жаңғақ", allergyText] },
-    { title: "Кешкі ас", time: "19:30", items: [profile.goal === "gain_weight" ? "ақуыз + күрделі көмірсу" : "ақуыз + жеңіл көкөніс", "ұйқыға 2-3 сағат қалғанда аяқтау"] },
+    { title: "Таңғы ас", time: "08:00", items: ["сұлы ботқасы немесе жұмыртқа", "жеміс", "қантсыз шай немесе су"], calories: Math.round(calories * 0.25) },
+    { title: "Түскі ас", time: "13:00", items: [mealProtein, carbBase, "көкөніс"], calories: Math.round(calories * 0.35) },
+    { title: "Аралық ас", time: "16:30", items: ["айран, йогурт немесе жаңғақ", allergyText], calories: Math.round(calories * 0.15) },
+    { title: "Кешкі ас", time: "19:30", items: [profile.goal === "gain_weight" ? "ақуыз + күрделі көмірсу" : "ақуыз + жеңіл көкөніс", "ұйқыға 2-3 сағат қалғанда аяқтау"], calories: Math.round(calories * 0.25) },
   ];
 
   const workouts = days.map((day, index) => {
@@ -163,6 +200,16 @@ export function calculateLifestylePlan(profile: LifestyleProfileInput): Lifestyl
     carbsG,
     waterLiters,
     restDays,
+    bmi,
+    bmiCategory,
+    bmr,
+    tdee,
+    targetWeightKg,
+    weeklyDeltaKg,
+    weeksToGoal,
+    projectedGoalDate,
+    stepGoal,
+    sleepHours,
     meals,
     workouts,
     safetyNotes,

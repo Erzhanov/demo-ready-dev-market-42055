@@ -50,6 +50,7 @@ import {
   goalLabels,
   parseAllergies,
 } from "@/lib/lifestyle";
+import { CheckInChart, GoalProgressCard, HealthMetricsCard, MacroDonutCard, WeightChart } from "@/components/lifestyle/LifestyleCharts";
 
 type ReminderChannel = "in_app" | "browser" | "telegram";
 type ActiveSection = "dashboard" | "profile" | "plan" | "tracking" | "notifications";
@@ -408,6 +409,22 @@ const LifestylePage = () => {
               )}
             </div>
 
+            {/* Health metrics: BMI, BMR, TDEE */}
+            <HealthMetricsCard plan={plan} />
+
+            {/* Goal progress */}
+            <GoalProgressCard plan={plan} currentWeight={lastWeight ?? numericProfile.weightKg} />
+
+            {/* Charts row */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <WeightChart data={recentWeights} target={plan.targetWeightKg} />
+              <CheckInChart data={recentCheckIns} />
+            </div>
+
+            {/* Macro donut */}
+            <MacroDonutCard plan={plan} />
+
+
             {/* Safety notes */}
             <div className="rounded-3xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
               <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
@@ -500,7 +517,10 @@ const LifestylePage = () => {
                         <span className="text-lg">{["🌅", "☀️", "🌤️", "🌆"][i]}</span>
                         <p className="font-medium">{meal.title}</p>
                       </div>
-                      <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">{meal.time}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{meal.calories} ккал</span>
+                        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">{meal.time}</span>
+                      </div>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{meal.items.join(" • ")}</p>
                   </div>
