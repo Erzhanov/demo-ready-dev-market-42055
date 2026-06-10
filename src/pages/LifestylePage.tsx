@@ -517,7 +517,10 @@ const LifestylePage = () => {
                         <span className="text-lg">{["🌅", "☀️", "🌤️", "🌆"][i]}</span>
                         <p className="font-medium">{meal.title}</p>
                       </div>
-                      <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">{meal.time}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{meal.calories} ккал</span>
+                        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">{meal.time}</span>
+                      </div>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{meal.items.join(" • ")}</p>
                   </div>
