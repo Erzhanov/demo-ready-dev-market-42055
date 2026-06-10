@@ -162,6 +162,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       <main className="mx-auto max-w-6xl px-3 py-3 pb-5 sm:px-6 sm:py-5">{children}</main>
       <WelcomeProDialog />
+      <ExpiredProDialog />
     </div>
   );
 };
