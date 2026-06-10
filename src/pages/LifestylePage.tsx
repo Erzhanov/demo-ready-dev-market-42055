@@ -409,6 +409,22 @@ const LifestylePage = () => {
               )}
             </div>
 
+            {/* Health metrics: BMI, BMR, TDEE */}
+            <HealthMetricsCard plan={plan} />
+
+            {/* Goal progress */}
+            <GoalProgressCard plan={plan} currentWeight={lastWeight ?? numericProfile.weightKg} />
+
+            {/* Charts row */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <WeightChart data={recentWeights} target={plan.targetWeightKg} />
+              <CheckInChart data={recentCheckIns} />
+            </div>
+
+            {/* Macro donut */}
+            <MacroDonutCard plan={plan} />
+
+
             {/* Safety notes */}
             <div className="rounded-3xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
               <p className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
