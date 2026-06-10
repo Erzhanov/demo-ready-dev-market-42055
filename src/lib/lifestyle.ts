@@ -21,10 +21,21 @@ export interface LifestylePlan {
   carbsG: number;
   waterLiters: number;
   restDays: string[];
+  bmi: number;
+  bmiCategory: "underweight" | "normal" | "overweight" | "obese";
+  bmr: number;
+  tdee: number;
+  targetWeightKg: number;
+  weeklyDeltaKg: number;
+  weeksToGoal: number;
+  projectedGoalDate: string | null;
+  stepGoal: number;
+  sleepHours: number;
   meals: Array<{
     title: string;
     time: string;
     items: string[];
+    calories: number;
   }>;
   workouts: Array<{
     day: string;
