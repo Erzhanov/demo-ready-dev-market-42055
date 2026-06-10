@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { useProStatus } from "@/hooks/use-pro-status";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { WelcomeProDialog } from "@/components/WelcomeProDialog";
 
 interface LayoutProps {
   children: React.ReactNode;
