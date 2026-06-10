@@ -149,6 +149,13 @@ const en: Translations = {
   "welcome.bullet3": "All modes: medical, psychology, nutrition, fitness",
   "welcome.until": "PRO active until",
   "welcome.cta": "Awesome, let's go!",
+
+  // PRO expired
+  "expired.title": "Your 3-day PRO has ended",
+  "expired.subtitle": "You're back on the Free plan",
+  "expired.desc": "The 3-day PRO gift has ended. You're now back to 5 free questions per 12 hours. If you'd like to keep unlimited PRO access, tap the button below.",
+  "expired.cta": "Continue with PRO",
+  "expired.later": "Maybe later",
 };
 
 const translations: Record<Lang, Translations> = { kk, en };
