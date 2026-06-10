@@ -62,6 +62,17 @@ const kk: Translations = {
   "pro.check2": "Толық әрі терең жауап",
   "pro.check3": "Медициналық қауіпсіздік ескертулері",
   "pro.whatsapp_btn": "WhatsApp жіберу",
+
+  // Welcome 3-day Pro gift
+  "welcome.badge": "СЫЙЛЫҚ • PRO",
+  "welcome.title": "Сізге 3 күн тегін PRO сыйладық!",
+  "welcome.subtitle": "AIZHAN-ға тіркелгеніңіз үшін рахмет 💛",
+  "welcome.desc": "Тіркелген сәттен бастап 3 күн бойы AIZHAN-ның барлық PRO мүмкіндіктері сізге толықтай ашық. Ешқандай төлем жасамайсыз.",
+  "welcome.bullet1": "Лимитсіз AI сұрақтар (free режимінде 12 сағатқа 5 ғана)",
+  "welcome.bullet2": "Толық және терең медициналық жауаптар",
+  "welcome.bullet3": "Барлық режимдер: медицина, психология, тамақтану, фитнес",
+  "welcome.until": "PRO белсенді",
+  "welcome.cta": "Тамаша, бастаймын!",
 };
 
 const en: Translations = {
@@ -120,6 +131,17 @@ const en: Translations = {
   "pro.check2": "Complete and deep answers",
   "pro.check3": "Medical safety warnings",
   "pro.whatsapp_btn": "Send WhatsApp",
+
+  // Welcome 3-day Pro gift
+  "welcome.badge": "GIFT • PRO",
+  "welcome.title": "You got 3 days of PRO for free!",
+  "welcome.subtitle": "Thanks for signing up to AIZHAN 💛",
+  "welcome.desc": "From the moment you signed up, all PRO features of AIZHAN are unlocked for 3 days. No payment required.",
+  "welcome.bullet1": "Unlimited AI questions (Free is limited to 5 per 12h)",
+  "welcome.bullet2": "Full, detailed and in-depth medical answers",
+  "welcome.bullet3": "All modes: medical, psychology, nutrition, fitness",
+  "welcome.until": "PRO active until",
+  "welcome.cta": "Awesome, let's go!",
 };
 
 const translations: Record<Lang, Translations> = { kk, en };
