@@ -73,6 +73,13 @@ const kk: Translations = {
   "welcome.bullet3": "Барлық режимдер: медицина, психология, тамақтану, фитнес",
   "welcome.until": "PRO белсенді",
   "welcome.cta": "Тамаша, бастаймын!",
+
+  // PRO expired
+  "expired.title": "3 күндік PRO кезеңі аяқталды",
+  "expired.subtitle": "Сіз қайта Free режиміне көштіңіз",
+  "expired.desc": "Сыйлық ретінде берілген 3 күндік PRO мерзімі аяқталды. Енді 12 сағатта 5 тегін сұраққа қайта оралдыңыз. PRO-ны жалғастырып, лимитсіз сұрақ қойғыңыз келсе, төмендегі түймені басыңыз.",
+  "expired.cta": "PRO-ны жалғастыру",
+  "expired.later": "Кейінірек",
 };
 
 const en: Translations = {
@@ -142,6 +149,13 @@ const en: Translations = {
   "welcome.bullet3": "All modes: medical, psychology, nutrition, fitness",
   "welcome.until": "PRO active until",
   "welcome.cta": "Awesome, let's go!",
+
+  // PRO expired
+  "expired.title": "Your 3-day PRO has ended",
+  "expired.subtitle": "You're back on the Free plan",
+  "expired.desc": "The 3-day PRO gift has ended. You're now back to 5 free questions per 12 hours. If you'd like to keep unlimited PRO access, tap the button below.",
+  "expired.cta": "Continue with PRO",
+  "expired.later": "Maybe later",
 };
 
 const translations: Record<Lang, Translations> = { kk, en };
