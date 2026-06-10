@@ -62,6 +62,17 @@ const kk: Translations = {
   "pro.check2": "Толық әрі терең жауап",
   "pro.check3": "Медициналық қауіпсіздік ескертулері",
   "pro.whatsapp_btn": "WhatsApp жіберу",
+
+  // Welcome 3-day Pro gift
+  "welcome.badge": "СЫЙЛЫҚ • PRO",
+  "welcome.title": "Сізге 3 күн тегін PRO сыйладық!",
+  "welcome.subtitle": "AIZHAN-ға тіркелгеніңіз үшін рахмет 💛",
+  "welcome.desc": "Тіркелген сәттен бастап 3 күн бойы AIZHAN-ның барлық PRO мүмкіндіктері сізге толықтай ашық. Ешқандай төлем жасамайсыз.",
+  "welcome.bullet1": "Лимитсіз AI сұрақтар (free режимінде 12 сағатқа 5 ғана)",
+  "welcome.bullet2": "Толық және терең медициналық жауаптар",
+  "welcome.bullet3": "Барлық режимдер: медицина, психология, тамақтану, фитнес",
+  "welcome.until": "PRO белсенді",
+  "welcome.cta": "Тамаша, бастаймын!",
 };
 
 const en: Translations = {
