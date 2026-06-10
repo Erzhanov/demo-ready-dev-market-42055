@@ -50,6 +50,7 @@ import {
   goalLabels,
   parseAllergies,
 } from "@/lib/lifestyle";
+import { CheckInChart, GoalProgressCard, HealthMetricsCard, MacroDonutCard, WeightChart } from "@/components/lifestyle/LifestyleCharts";
 
 type ReminderChannel = "in_app" | "browser" | "telegram";
 type ActiveSection = "dashboard" | "profile" | "plan" | "tracking" | "notifications";
