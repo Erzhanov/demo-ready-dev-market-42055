@@ -131,6 +131,17 @@ const en: Translations = {
   "pro.check2": "Complete and deep answers",
   "pro.check3": "Medical safety warnings",
   "pro.whatsapp_btn": "Send WhatsApp",
+
+  // Welcome 3-day Pro gift
+  "welcome.badge": "GIFT • PRO",
+  "welcome.title": "You got 3 days of PRO for free!",
+  "welcome.subtitle": "Thanks for signing up to AIZHAN 💛",
+  "welcome.desc": "From the moment you signed up, all PRO features of AIZHAN are unlocked for 3 days. No payment required.",
+  "welcome.bullet1": "Unlimited AI questions (Free is limited to 5 per 12h)",
+  "welcome.bullet2": "Full, detailed and in-depth medical answers",
+  "welcome.bullet3": "All modes: medical, psychology, nutrition, fitness",
+  "welcome.until": "PRO active until",
+  "welcome.cta": "Awesome, let's go!",
 };
 
 const translations: Record<Lang, Translations> = { kk, en };
