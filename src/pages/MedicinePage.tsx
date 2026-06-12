@@ -2,12 +2,13 @@
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Pill, AlertTriangle } from "lucide-react";
+import { Search, Pill, AlertTriangle, Loader2 } from "lucide-react";
 import { streamChat } from "@/lib/ai-stream";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const popularMedicines = ["Парацетамол", "Ибупрофен", "Амоксициллин", "Лоратадин"];
 
@@ -17,6 +18,7 @@ const MedicinePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user, session } = useAuth();
+  const { t } = useLanguage();
 
   const handleSearch = async (name?: string) => {
     const query = name || search;
