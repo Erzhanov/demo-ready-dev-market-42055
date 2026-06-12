@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
-type Lang = "kk" | "en";
+type Lang = "kk" | "ru";
 
 interface Translations {
   [key: string]: string;
@@ -80,102 +80,129 @@ const kk: Translations = {
   "expired.desc": "Сыйлық ретінде берілген 3 күндік PRO мерзімі аяқталды. Енді 12 сағатта 5 тегін сұраққа қайта оралдыңыз. PRO-ны жалғастырып, лимитсіз сұрақ қойғыңыз келсе, төмендегі түймені басыңыз.",
   "expired.cta": "PRO-ны жалғастыру",
   "expired.later": "Кейінірек",
+
+  // Language select dialog
+  "langselect.title": "Тілді таңдаңыз",
+  "langselect.subtitle": "Сайтты қай тілде жалғастырғыңыз келеді?",
+  "langselect.kk": "Қазақша",
+  "langselect.ru": "Орысша",
+  "langselect.continue": "Жалғастыру",
+
+  // Medicine
+  "medicine.searching": "Іздеу жүріп жатыр...",
 };
 
-const en: Translations = {
+const ru: Translations = {
   // Nav
-  "nav.help": "Help",
-  "nav.history": "History",
-  "nav.medicine": "Medicine",
+  "nav.help": "Помощь",
+  "nav.history": "История",
+  "nav.medicine": "Лекарства",
   "nav.lifestyle": "Lifestyle",
-  "nav.reviews": "Reviews",
-  "nav.profile": "Profile",
+  "nav.reviews": "Отзывы",
+  "nav.profile": "Профиль",
   "nav.pro": "Pro",
-  "nav.admin": "Admin",
-  "nav.menu": "Menu",
-  "nav.logout": "Logout",
-  "nav.subtitle.pro": "Pro medical assistant — unlimited",
-  "nav.subtitle.free": "Simple medical assistant",
+  "nav.admin": "Админ",
+  "nav.menu": "Меню",
+  "nav.logout": "Выйти",
+  "nav.subtitle.pro": "Pro медицинский ассистент — без лимита",
+  "nav.subtitle.free": "Простой медицинский ассистент",
 
   // Chat
-  "chat.placeholder": "Type your question...",
-  "chat.send": "Send",
-  "chat.remaining": "Questions left",
-  "chat.unlimited": "Unlimited",
-  "chat.mode.medical": "Medical",
-  "chat.mode.psychology": "Psychology",
-  "chat.mode.motivation": "Motivation",
-  "chat.mode.nutrition": "Nutrition",
-  "chat.mode.fitness": "Fitness",
-  "chat.welcome": "Welcome to AIZHAN! Ask questions about health, psychology, nutrition or fitness.",
-  "chat.limit.title": "Question limit reached",
-  "chat.limit.desc": "5 free questions per 12 hours. Get Pro for unlimited access.",
-  "chat.limit.buy": "Get Pro",
+  "chat.placeholder": "Напишите ваш вопрос...",
+  "chat.send": "Отправить",
+  "chat.remaining": "Осталось вопросов",
+  "chat.unlimited": "Без ограничений",
+  "chat.mode.medical": "Медицина",
+  "chat.mode.psychology": "Психология",
+  "chat.mode.motivation": "Мотивация",
+  "chat.mode.nutrition": "Питание",
+  "chat.mode.fitness": "Фитнес",
+  "chat.welcome": "Добро пожаловать в AIZHAN! Задайте вопрос о здоровье, психологии, питании или фитнесе.",
+  "chat.limit.title": "Лимит вопросов исчерпан",
+  "chat.limit.desc": "5 бесплатных вопросов на 12 часов. Подключите Pro для безлимитного доступа.",
+  "chat.limit.buy": "Получить Pro",
 
   // Pro page
   "pro.badge": "AIZHAN Pro",
-  "pro.title": "Unlimited and detailed Pro mode",
-  "pro.desc": "Pro subscription is designed for people who frequently use AI as a daily assistant.",
-  "pro.price": "4990 KZT / month",
-  "pro.active": "Pro active",
-  "pro.until": "until",
-  "pro.unlimited": "unlimited",
-  "pro.buy": "Get Pro via WhatsApp",
-  "pro.go_chat": "Go to Chat",
-  "pro.price_label": "Price",
-  "pro.per_month": "/ month",
-  "pro.benefit1.title": "Unlimited questions",
-  "pro.benefit1.text": "Pro users can ask as many questions as they want. Free plan gives 5 questions per 12 hours.",
-  "pro.benefit2.title": "Detailed answers",
-  "pro.benefit2.text": "In Pro mode, AI provides more thorough explanations: causes, steps, warning signs and next actions.",
-  "pro.benefit3.title": "Stronger AI mode",
-  "pro.benefit3.text": "Free answers are short and general, while Pro answers are deeper and more practical.",
-  "pro.benefit4.title": "Safe advice",
-  "pro.benefit4.text": "In medical questions AI doesn't diagnose, but warns to see a doctor when necessary.",
-  "pro.diff.title": "Difference between Free and Pro",
-  "pro.diff.text": "In the Free plan, AI gives short, general answers limited to 5 questions per 12 hours. In the Pro plan, there's no question limit, and answers are complete, specific and well-structured.",
-  "pro.check1": "Unlimited AI questions",
-  "pro.check2": "Complete and deep answers",
-  "pro.check3": "Medical safety warnings",
-  "pro.whatsapp_btn": "Send WhatsApp",
+  "pro.title": "Безлимитный Pro-режим с подробными ответами",
+  "pro.desc": "Pro-подписка создана для тех, кто использует AI как ежедневного помощника.",
+  "pro.price": "4990 тг / мес",
+  "pro.active": "Pro активен",
+  "pro.until": "до",
+  "pro.unlimited": "бессрочно",
+  "pro.buy": "Получить Pro через WhatsApp",
+  "pro.go_chat": "Перейти в чат",
+  "pro.price_label": "Цена",
+  "pro.per_month": "/ мес",
+  "pro.benefit1.title": "Безлимитные вопросы",
+  "pro.benefit1.text": "Pro-пользователи могут задавать любое количество вопросов. В Free — 5 вопросов на 12 часов.",
+  "pro.benefit2.title": "Подробные ответы",
+  "pro.benefit2.text": "В Pro-режиме AI даёт более глубокие объяснения: причины, шаги, признаки опасности и следующие действия.",
+  "pro.benefit3.title": "Усиленный AI-режим",
+  "pro.benefit3.text": "Free даёт короткие и общие ответы, Pro — более глубокие и практичные.",
+  "pro.benefit4.title": "Безопасные советы",
+  "pro.benefit4.text": "В медицинских вопросах AI не ставит диагноз, но предупреждает о необходимости обратиться к врачу.",
+  "pro.diff.title": "Разница между Free и Pro",
+  "pro.diff.text": "В Free AI даёт короткие, общие ответы с лимитом 5 вопросов на 12 часов. В Pro нет лимита, а ответы полные, точные и хорошо структурированные.",
+  "pro.check1": "Безлимит AI-вопросов",
+  "pro.check2": "Полные и глубокие ответы",
+  "pro.check3": "Медицинские предупреждения",
+  "pro.whatsapp_btn": "Написать в WhatsApp",
 
   // Welcome 3-day Pro gift
-  "welcome.badge": "GIFT • PRO",
-  "welcome.title": "You got 3 days of PRO for free!",
-  "welcome.subtitle": "Thanks for signing up to AIZHAN 💛",
-  "welcome.desc": "From the moment you signed up, all PRO features of AIZHAN are unlocked for 3 days. No payment required.",
-  "welcome.bullet1": "Unlimited AI questions (Free is limited to 5 per 12h)",
-  "welcome.bullet2": "Full, detailed and in-depth medical answers",
-  "welcome.bullet3": "All modes: medical, psychology, nutrition, fitness",
-  "welcome.until": "PRO active until",
-  "welcome.cta": "Awesome, let's go!",
+  "welcome.badge": "ПОДАРОК • PRO",
+  "welcome.title": "Вам подарено 3 дня PRO бесплатно!",
+  "welcome.subtitle": "Спасибо за регистрацию в AIZHAN 💛",
+  "welcome.desc": "С момента регистрации все возможности PRO открыты для вас на 3 дня. Никакой оплаты не требуется.",
+  "welcome.bullet1": "Безлимитные AI-вопросы (Free — только 5 на 12ч)",
+  "welcome.bullet2": "Полные и подробные медицинские ответы",
+  "welcome.bullet3": "Все режимы: медицина, психология, питание, фитнес",
+  "welcome.until": "PRO активен до",
+  "welcome.cta": "Отлично, начинаю!",
 
   // PRO expired
-  "expired.title": "Your 3-day PRO has ended",
-  "expired.subtitle": "You're back on the Free plan",
-  "expired.desc": "The 3-day PRO gift has ended. You're now back to 5 free questions per 12 hours. If you'd like to keep unlimited PRO access, tap the button below.",
-  "expired.cta": "Continue with PRO",
-  "expired.later": "Maybe later",
+  "expired.title": "3 дня PRO закончились",
+  "expired.subtitle": "Вы вернулись в Free-режим",
+  "expired.desc": "Подарочный 3-дневный PRO закончился. Теперь у вас снова 5 бесплатных вопросов на 12 часов. Чтобы продолжить с безлимитом, нажмите кнопку ниже.",
+  "expired.cta": "Продолжить с PRO",
+  "expired.later": "Позже",
+
+  // Language select dialog
+  "langselect.title": "Выберите язык",
+  "langselect.subtitle": "На каком языке продолжить работу с сайтом?",
+  "langselect.kk": "Казахский",
+  "langselect.ru": "Русский",
+  "langselect.continue": "Продолжить",
+
+  // Medicine
+  "medicine.searching": "Идёт поиск...",
 };
 
-const translations: Record<Lang, Translations> = { kk, en };
+const translations: Record<Lang, Translations> = { kk, ru };
 
 interface LanguageContextType {
   lang: Lang;
   setLang: (lang: Lang) => void;
   t: (key: string) => string;
+  hasChosen: boolean;
+  markChosen: () => void;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
   lang: "kk",
   setLang: () => {},
   t: (key) => key,
+  hasChosen: true,
+  markChosen: () => {},
 });
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLangState] = useState<Lang>(() => {
     const saved = localStorage.getItem("aizhan_lang");
-    return (saved === "en" ? "en" : "kk") as Lang;
+    return (saved === "ru" ? "ru" : "kk") as Lang;
+  });
+  const [hasChosen, setHasChosen] = useState<boolean>(() => {
+    return localStorage.getItem("aizhan_lang_chosen") === "1";
   });
 
   const setLang = (l: Lang) => {
@@ -183,12 +210,17 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("aizhan_lang", l);
   };
 
+  const markChosen = () => {
+    localStorage.setItem("aizhan_lang_chosen", "1");
+    setHasChosen(true);
+  };
+
   const t = (key: string): string => {
     return translations[lang]?.[key] || translations.kk[key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t }}>
+    <LanguageContext.Provider value={{ lang, setLang, t, hasChosen, markChosen }}>
       {children}
     </LanguageContext.Provider>
   );

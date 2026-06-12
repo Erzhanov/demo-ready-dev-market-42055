@@ -2,12 +2,13 @@
 import Layout from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Pill, AlertTriangle } from "lucide-react";
+import { Search, Pill, AlertTriangle, Loader2 } from "lucide-react";
 import { streamChat } from "@/lib/ai-stream";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const popularMedicines = ["Парацетамол", "Ибупрофен", "Амоксициллин", "Лоратадин"];
 
@@ -17,6 +18,7 @@ const MedicinePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user, session } = useAuth();
+  const { t } = useLanguage();
 
   const handleSearch = async (name?: string) => {
     const query = name || search;
@@ -76,7 +78,7 @@ const MedicinePage = () => {
               />
             </div>
             <Button onClick={() => handleSearch()} disabled={!search.trim() || isLoading} className="h-11 rounded-xl gradient-medical text-primary-foreground shadow-card">
-              Іздеу
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Іздеу"}
             </Button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -88,7 +90,27 @@ const MedicinePage = () => {
           </div>
         </section>
 
-        {result !== null && result !== "" ? (
+        {isLoading && (!result || result === "") ? (
+          <section className="surface-soft rounded-3xl border border-border/80 p-6 ring-soft">
+            <div className="flex flex-col items-center justify-center gap-4 py-6">
+              <div className="relative">
+                <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-full gradient-medical shadow-card">
+                  <Pill className="h-6 w-6 animate-pulse text-primary-foreground" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                {t("medicine.searching")}
+              </div>
+              <div className="flex gap-1.5">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-primary" />
+              </div>
+            </div>
+          </section>
+        ) : result !== null && result !== "" ? (
           <section className="surface-soft rounded-3xl border border-border/80 p-4 ring-soft">
             <div className="prose prose-sm max-w-none text-sm leading-relaxed dark:prose-invert">
               <ReactMarkdown>{result}</ReactMarkdown>
