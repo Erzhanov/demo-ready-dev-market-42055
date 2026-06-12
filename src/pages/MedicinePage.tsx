@@ -33,6 +33,7 @@ const MedicinePage = () => {
       await streamChat({
         messages: [{ role: "user", content: `${query} дәрісі туралы қысқа әрі түсінікті ақпарат бер.` }],
         mode: "medicine",
+        accessToken: session.access_token,
         onDelta: (fullContent) => {
           content = fullContent;
           setResult(content);
