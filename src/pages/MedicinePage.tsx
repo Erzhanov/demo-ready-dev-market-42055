@@ -16,11 +16,15 @@ const MedicinePage = () => {
   const [result, setResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const handleSearch = async (name?: string) => {
     const query = name || search;
     if (!query.trim()) return;
+    if (!session?.access_token) {
+      toast({ title: "Қате", description: "Алдымен аккаунтқа кіріңіз.", variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
     setResult("");
 
