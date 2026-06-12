@@ -9,6 +9,7 @@ import { useProStatus } from "@/hooks/use-pro-status";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WelcomeProDialog } from "@/components/WelcomeProDialog";
 import { ExpiredProDialog } from "@/components/ExpiredProDialog";
+import { LanguageSelectDialog } from "@/components/LanguageSelectDialog";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,7 +40,7 @@ const Layout = ({ children }: LayoutProps) => {
     navigate("/login");
   };
 
-  const toggleLang = () => setLang(lang === "kk" ? "en" : "kk");
+  const toggleLang = () => setLang(lang === "kk" ? "ru" : "kk");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -95,7 +96,7 @@ const Layout = ({ children }: LayoutProps) => {
             )}
             <Button variant="ghost" size="sm" onClick={toggleLang} className="h-9 rounded-xl px-2.5 text-xs font-semibold text-muted-foreground hover:bg-secondary">
               <Globe className="mr-1 h-3.5 w-3.5" />
-              {lang === "kk" ? "EN" : "ҚАЗ"}
+              {lang === "kk" ? "РУС" : "ҚАЗ"}
             </Button>
             <ThemeToggle />
             <Button variant="ghost" onClick={handleLogout} className="h-9 rounded-xl px-3 text-sm text-muted-foreground hover:bg-secondary">
@@ -107,7 +108,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="flex items-center gap-2 md:hidden">
             <Button variant="ghost" size="sm" onClick={toggleLang} className="h-9 rounded-xl px-2 text-xs font-semibold">
               <Globe className="mr-1 h-3.5 w-3.5" />
-              {lang === "kk" ? "EN" : "ҚАЗ"}
+              {lang === "kk" ? "РУС" : "ҚАЗ"}
             </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} className="rounded-xl hover:bg-secondary">
@@ -161,6 +162,7 @@ const Layout = ({ children }: LayoutProps) => {
       )}
 
       <main className="mx-auto max-w-6xl px-3 py-3 pb-5 sm:px-6 sm:py-5">{children}</main>
+      <LanguageSelectDialog />
       <WelcomeProDialog />
       <ExpiredProDialog />
     </div>

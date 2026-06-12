@@ -19,7 +19,7 @@ export const LanguageSelectDialog = () => {
 
   return (
     <Dialog open onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" hideCloseButton>
+      <DialogContent className="sm:max-w-md [&>button]:hidden" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl gradient-medical shadow-card">
             <Globe className="h-6 w-6 text-primary-foreground" />
