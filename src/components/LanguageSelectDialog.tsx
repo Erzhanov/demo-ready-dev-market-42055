@@ -9,8 +9,14 @@ export const LanguageSelectDialog = () => {
   const { user } = useAuth();
   const { lang, setLang, hasChosen, markChosen, t } = useLanguage();
   const [selected, setSelected] = useState<"kk" | "ru">(lang);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   if (!user || hasChosen) return null;
+
+  const handleSelect = (code: "kk" | "ru") => {
+    setSelected(code);
+    setHasInteracted(true);
+  };
 
   const handleContinue = () => {
     setLang(selected);
@@ -40,7 +46,7 @@ export const LanguageSelectDialog = () => {
             return (
               <button
                 key={code}
-                onClick={() => setSelected(code)}
+                onClick={() => handleSelect(code)}
                 className={`relative rounded-2xl border-2 p-4 text-left transition-all ${
                   active
                     ? "border-primary bg-primary/5 shadow-card"
@@ -64,9 +70,11 @@ export const LanguageSelectDialog = () => {
           })}
         </div>
 
-        <Button onClick={handleContinue} className="w-full gradient-medical text-primary-foreground">
-          {selected === "kk" ? "Жалғастыру" : "Продолжить"}
-        </Button>
+        {hasInteracted && (
+          <Button onClick={handleContinue} className="w-full gradient-medical text-primary-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {t("langselect.continue")}
+          </Button>
+        )}
       </DialogContent>
     </Dialog>
   );
