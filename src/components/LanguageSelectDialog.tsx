@@ -70,11 +70,9 @@ export const LanguageSelectDialog = () => {
           })}
         </div>
 
-        {hasInteracted && (
-          <Button onClick={handleContinue} className="w-full gradient-medical text-primary-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {t("langselect.continue")}
-          </Button>
-        )}
+        <Button onClick={handleContinue} className="w-full gradient-medical text-primary-foreground">
+          {t("langselect.continue")} →
+        </Button>
       </DialogContent>
     </Dialog>
   );
