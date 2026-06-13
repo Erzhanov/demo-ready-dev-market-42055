@@ -9,7 +9,6 @@ import { useProStatus } from "@/hooks/use-pro-status";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WelcomeProDialog } from "@/components/WelcomeProDialog";
 import { ExpiredProDialog } from "@/components/ExpiredProDialog";
-import { LanguageSelectDialog } from "@/components/LanguageSelectDialog";
 
 interface LayoutProps {
   children: React.ReactNode;
