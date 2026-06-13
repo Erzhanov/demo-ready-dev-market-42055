@@ -9,8 +9,14 @@ export const LanguageSelectDialog = () => {
   const { user } = useAuth();
   const { lang, setLang, hasChosen, markChosen, t } = useLanguage();
   const [selected, setSelected] = useState<"kk" | "ru">(lang);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   if (!user || hasChosen) return null;
+
+  const handleSelect = (code: "kk" | "ru") => {
+    setSelected(code);
+    setHasInteracted(true);
+  };
 
   const handleContinue = () => {
     setLang(selected);
