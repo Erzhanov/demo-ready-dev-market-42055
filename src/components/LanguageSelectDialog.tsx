@@ -65,7 +65,7 @@ export const LanguageSelectDialog = () => {
         </div>
 
         <Button onClick={handleContinue} className="w-full gradient-medical text-primary-foreground">
-          {selected === "kk" ? "Жалғастыру" : "Продолжить"}
+          {t("langselect.continue")}
         </Button>
       </DialogContent>
     </Dialog>
