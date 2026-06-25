@@ -147,12 +147,20 @@
   }
 
   .font-display {
-    font-family: 'Segoe UI', Tahoma, Arial, 'Noto Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Nunito', 'Segoe UI', Tahoma, Arial, 'Noto Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .shadow-inset {
+    box-shadow: var(--shadow-inset);
   }
 
   .glass-panel {
-    background: linear-gradient(180deg, hsl(0 0% 100% / 0.92), hsl(0 0% 100% / 0.84));
-    backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.84));
+    backdrop-filter: blur(14px);
+    box-shadow: var(--shadow-card);
+    border-radius: calc(var(--radius) + 0.25rem);
   }
 
   .section-shell {
@@ -167,12 +175,12 @@
     display: inline-flex;
     align-items: center;
     border-radius: 9999px;
-    border: 1px solid hsl(var(--border));
-    background: hsl(0 0% 100%);
-    padding: 0.35rem 0.7rem;
+    background: hsl(var(--card));
+    padding: 0.4rem 0.85rem;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
     color: hsl(var(--muted-foreground));
+    box-shadow: var(--shadow-card);
   }
 
   .bg-grid-soft,
@@ -199,15 +207,20 @@
   }
 
   .surface-soft {
-    background: linear-gradient(180deg, hsl(0 0% 100%), hsl(200 30% 98%));
+    background: hsl(var(--card));
+    border-radius: calc(var(--radius) + 0.25rem);
+    box-shadow: var(--shadow-card);
   }
 
   .surface-muted {
-    background: linear-gradient(180deg, hsl(200 30% 98%), hsl(200 20% 95%));
+    background: hsl(var(--muted));
+    border-radius: calc(var(--radius) + 0.25rem);
+    box-shadow: var(--shadow-inset);
   }
 
   .ring-soft {
-    box-shadow: 0 0 0 1px hsl(var(--border)), 0 12px 30px -24px hsl(201 80% 42% / 0.25);
+    box-shadow: var(--shadow-card);
+    border-radius: calc(var(--radius) + 0.25rem);
   }
 
   .spinner-ring {
