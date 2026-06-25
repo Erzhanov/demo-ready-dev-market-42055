@@ -271,24 +271,16 @@
   }
 }
 
-.dark .surface-soft {
-  background: linear-gradient(180deg, hsl(222 22% 12%), hsl(220 20% 11%));
-}
-
-.dark .eyebrow {
-  background: hsl(220 20% 14% / 0.92);
-  border-color: hsl(var(--border));
-  color: hsl(var(--foreground) / 0.82);
-}
-
+.dark .surface-soft,
 .dark .glass-panel {
-  background: linear-gradient(180deg, hsl(222 22% 12% / 0.94), hsl(220 20% 11% / 0.9));
+  background: hsl(var(--card));
 }
 
 .dark .surface-muted {
-  background: linear-gradient(180deg, hsl(218 18% 16%), hsl(220 18% 14%));
+  background: hsl(var(--muted));
 }
 
-.dark .ring-soft {
-  box-shadow: 0 0 0 1px hsl(var(--border)), 0 16px 34px -28px hsl(201 88% 55% / 0.35);
+.dark .eyebrow {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground) / 0.82);
 }
