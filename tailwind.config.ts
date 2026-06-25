@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Segoe UI', 'Tahoma', 'Arial', 'Noto Sans', 'system-ui', 'sans-serif'],
-        display: ['Segoe UI', 'Tahoma', 'Arial', 'Noto Sans', 'system-ui', 'sans-serif'],
+        sans: ['Nunito', 'Segoe UI', 'Tahoma', 'Arial', 'Noto Sans', 'system-ui', 'sans-serif'],
+        display: ['Nunito', 'Segoe UI', 'Tahoma', 'Arial', 'Noto Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
